@@ -1539,6 +1539,9 @@ appId: &quot;...&quot;"></textarea>
             <button id="generate-firebase-url-btn" class="w-full px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition duration-300 mt-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                 生成異機專用網址(可免再設定firebase)
             </button>
+            <button id="clear-firebase-config-btn" class="w-full px-6 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition duration-300 mt-2">
+                <i class="fas fa-trash-alt mr-2"></i>清除本地設定值
+            </button>
             <p id="firebase-copy-success-msg" class="text-center mt-3 text-sm font-medium hidden"></p>
 
             <!-- 網址資訊顯示區域 -->
@@ -5689,6 +5692,7 @@ appId: &quot;...&quot;"></textarea>
             document.getElementById('apply-firebase-settings-btn').addEventListener('click', handleApplyFirebaseSettings);
             document.getElementById('generate-firebase-url-btn').addEventListener('click', handleGenerateFirebaseUrl);
             document.getElementById('download-qrcode-btn').addEventListener('click', downloadFirebaseQRCode);
+            document.getElementById('clear-firebase-config-btn').addEventListener('click', handleClearFirebaseConfig);
 
             // Copy URL buttons
             document.getElementById('copy-short-url-btn').addEventListener('click', () => {
@@ -7630,8 +7634,8 @@ appId: &quot;...&quot;"></textarea>
                 }
             }
 
-            // No config found - use demo config
-            console.warn("未找到 Firebase 設定，使用示範設定");
+            // No config found - return 'demo' to skip Firebase initialization
+            console.warn("未找到 Firebase 設定，請使用右上角按鈕進行設定");
             firebaseConfig = {
                 apiKey: "demo",
                 authDomain: "demo",
@@ -7640,13 +7644,8 @@ appId: &quot;...&quot;"></textarea>
                 messagingSenderId: "demo",
                 appId: "demo"
             };
-            try {
-                initializeFirebase();
-                return true;
-            } catch (error) {
-                console.error("初始化示範設定失敗:", error);
-                return false;
-            }
+            // Don't initialize Firebase with demo config, just return 'demo'
+            return 'demo';
         }
 
         /**
@@ -7876,12 +7875,62 @@ appId: &quot;...&quot;"></textarea>
             }
         }
 
+        /**
+         * Handle clear Firebase configuration button click
+         */
+        function handleClearFirebaseConfig() {
+            if (confirm('確定要清除本地儲存的 Firebase 設定嗎？清除後需要重新整理頁面才會生效。')) {
+                // Clear all Firebase-related data from localStorage
+                localStorage.removeItem('firebaseConfig');
+                localStorage.removeItem('firebaseConfigDraft');
+
+                // Clear the textarea
+                document.getElementById('firebase-config-textarea').value = '';
+
+                // Show success message
+                showFirebaseCopyMessage("本地設定值已清除，請重新整理頁面", false);
+
+                // Disable generate URL button
+                document.getElementById('generate-firebase-url-btn').disabled = true;
+
+                // Hide URL info and QR code if visible
+                document.getElementById('firebase-url-info').classList.add('hidden');
+                document.getElementById('firebase-qrcode-container').classList.add('hidden');
+
+                console.log("Firebase 本地設定已清除");
+            }
+        }
+
         // --- Initialization Function ---
         async function initialize() {
             // Setup Firebase configuration first
-            if (!setupFirebaseConfig()) {
+            const configResult = setupFirebaseConfig();
+            if (!configResult) {
                 console.error("Firebase 設定失敗");
                 return;
+            }
+
+            // Check if using demo config (no real Firebase setup)
+            if (configResult === 'demo') {
+                console.warn("未設定 Firebase，請點擊右上角「Firebase 設定」按鈕進行設定");
+                // Show entry view without Firebase initialization
+                showView('entry');
+
+                // Show warning message on the page
+                const entryView = document.getElementById('entry-view');
+                if (entryView && !document.getElementById('firebase-warning-banner')) {
+                    const warningBanner = document.createElement('div');
+                    warningBanner.id = 'firebase-warning-banner';
+                    warningBanner.className = 'fixed top-0 left-0 right-0 bg-yellow-100 border-b-2 border-yellow-400 p-3 text-center z-50';
+                    warningBanner.innerHTML = `
+                        <p class="text-yellow-800 font-semibold">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            尚未設定 Firebase，請點擊右上角「Firebase 設定」按鈕進行設定
+                        </p>
+                    `;
+                    document.body.insertBefore(warningBanner, document.body.firstChild);
+                }
+                return; // Stop initialization here
             }
 
             loadAISettings();
