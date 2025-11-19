@@ -1181,7 +1181,7 @@
                 <p class="text-xs">App ID: <span id="app-id-display"></span> &nbsp;&bull;&nbsp; User ID: <span id="user-id-display"></span></p>
                 <div class="mt-2">
                     <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="made-by-text !bg-white/50 !text-indigo-600 hover:!bg-white">
-                       Made by 阿剛老師V2.5
+                       Made by 阿剛老師V3
                     </a>
                 </div>
             </div>
@@ -7851,7 +7851,7 @@ appId: &quot;...&quot;"></textarea>
                 showFirebaseCopyMessage("正在生成短網址，請稍候...", false);
 
                 const base64Config = btoa(configContent);
-                const newUrl = `${window.location.origin}${window.location.pathname}?config=${base64Config}`;
+                const newUrl = `${window.location.origin}${window.location.pathname}?config=${base64Config}&hideFirebaseBtn=true`;
                 currentGeneratedUrl = newUrl; // Store original URL
 
                 // Generate short URL
@@ -8089,6 +8089,16 @@ appId: &quot;...&quot;"></textarea>
 
         // --- Initialization Function ---
         async function initialize() {
+            // Check if hideFirebaseBtn parameter is present in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('hideFirebaseBtn') === 'true') {
+                const firebaseBtn = document.getElementById('firebase-settings-btn');
+                if (firebaseBtn) {
+                    firebaseBtn.style.display = 'none';
+                    console.log('Firebase 設定按鈕已隱藏（因 URL 參數 hideFirebaseBtn=true）');
+                }
+            }
+
             // Setup Firebase configuration first
             const configResult = setupFirebaseConfig();
             if (!configResult) {
