@@ -1189,7 +1189,17 @@
 
         <div id="teacher-classroom-code-view" class="hidden text-center">
             <h2 class="text-3xl font-bold text-gray-800 mb-6">教師登入：請輸入教室代碼</h2>
-            <div class="max-w-sm mx-auto">
+            <div class="max-w-sm mx-auto space-y-4">
+                <!-- 已開啟教室代碼選單 -->
+                <div id="teacher-recent-classrooms-container" class="hidden mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2 text-left">選擇已開啟的教室：</label>
+                    <select id="teacher-recent-classrooms-select" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="">-- 選擇教室代碼 --</option>
+                    </select>
+                </div>
+
+                <div class="text-sm text-gray-500">或手動輸入新代碼：</div>
+
                 <input type="text" id="teacher-classroom-code-input" placeholder="請輸入自訂教室代碼" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button id="teacher-classroom-code-submit-btn" class="btn btn-primary mt-4">進入教師面板 ➡️</button>
                 <button id="teacher-classroom-code-back-btn" class="btn btn-gray mt-2">返回 ↩️</button>
@@ -1242,7 +1252,10 @@
                 </div>
             </div>
 
-            <div class="absolute bottom-4 left-4">
+            <div class="absolute bottom-4 left-4 flex gap-3">
+                <button id="leave-classroom-btn" class="btn btn-gray !w-auto text-sm h-10 px-3 py-2 flex items-center justify-center" title="暫離教室（保留資料）">
+                    <i class="fas fa-sign-out-alt mr-2"></i>暫離教室
+                </button>
                 <button id="ai-settings-btn" class="text-gray-500 hover:text-blue-700 transition-colors text-3xl" title="AI 設定">
                     <i class="fas fa-robot"></i>
                 </button>
@@ -5440,7 +5453,10 @@ appId: &quot;...&quot;"></textarea>
                     
                     console.log(`[Teacher] Cleared all data for classroom: ${classroomCode}`);
                 }
-                
+
+                // Remove classroom code from recent classrooms list
+                removeRecentClassroom(classroomCode);
+
                 classroomCode = null; // Clear the classroom code after ending session
                 localStorage.removeItem('teacherClassroomCode'); // Clear from local storage
 
@@ -5488,6 +5504,57 @@ appId: &quot;...&quot;"></textarea>
                 console.error("結束課程並清空資料失敗:", error);
                 showMessage("結束課程失敗，請檢查網路連線或聯繫管理員。", "error");
             }
+        }
+
+        /**
+         * (Teacher) Leave classroom without deleting data - just clear local state and return to entry view
+         */
+        async function leaveClassroom() {
+            if (!confirm('確定要暫離教室嗎？教室資料會保留，您稍後可以重新進入。')) {
+                return;
+            }
+
+            showMessage('正在離開教室...', 'info');
+
+            // Unsubscribe from all listeners
+            if (interactionModeUnsubscribe) interactionModeUnsubscribe();
+            if (studentResponsesUnsubscribe) studentResponsesUnsubscribe();
+            if (classroomPresenceUnsubscribe) {
+                classroomPresenceUnsubscribe();
+                classroomPresenceUnsubscribe = null;
+            }
+            interactionModeUnsubscribe = studentResponsesUnsubscribe = null;
+
+            // Clear local state (but don't delete Firestore data)
+            classroomCode = null;
+            localStorage.removeItem('teacherClassroomCode'); // Clear from local storage
+
+            studentName = null;
+            currentRole = null;
+            currentInteractionMode = null;
+            allStudentResponses = [];
+            activeStudentNames = [];
+            lastSelectedStudentCard = null;
+            lastSelectedModalStudent = null;
+            isResponsePaused = false;
+            currentMultipleChoiceQuestions = null;
+
+            // Clear UI
+            document.getElementById('student-responses-container').innerHTML = '<p class="text-gray-500 text-center col-span-full">正在等待學生作答...</p>';
+            document.getElementById('active-student-count').textContent = '0';
+            document.getElementById('teacher-image-status').textContent = '目前沒有背景圖片。可選擇檔案或直接貼上(Ctrl+V)。';
+            document.getElementById('teacher-image-preview').src = '';
+            document.getElementById('teacher-image-preview-container').classList.add('hidden');
+
+            clearDispatchSettings();
+            teacherUploadedBackgroundImageDataURL = null;
+            updateTeacherPauseButtonUI();
+
+            // Return to entry view
+            showView('entry');
+            showMessage('已離開教室，資料已保留。', 'success');
+
+            console.log('[Teacher] Left classroom without deleting data');
         }
 
         // NEW: Pause/Resume Response Logic
@@ -5726,6 +5793,7 @@ appId: &quot;...&quot;"></textarea>
                 // Check if passwd=no parameter is present in URL
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('passwd') === 'no') {
+                    loadRecentClassrooms(); // Load recent classrooms for teacher
                     showView('teacherClassroomCode');
                 } else {
                     document.getElementById('teacher-password-modal').classList.remove('hidden');
@@ -5747,9 +5815,12 @@ appId: &quot;...&quot;"></textarea>
                     document.getElementById('end-class-monitor-button-text').textContent = `下課 教室代碼: ${classroomCode}`; // Update button text for monitor view
                     localStorage.setItem('teacherClassroomCode', classroomCode); // Persist teacher's classroom code
 
+                    // Save classroom code to recent classrooms
+                    saveRecentClassroom(classroomCode);
+
                     // Set initial classroom state in Firestore, including isPaused: false
                     const controlRef = doc(db, 'artifacts', baseAppId, 'public', 'data', 'classrooms', classroomCode, 'settings', 'control');
-                    await setDoc(controlRef, { active_mode: 'waiting', teacherId: userId, backgroundImage: null, isPaused: false, multiple_choice_questions: null }, { merge: true }); 
+                    await setDoc(controlRef, { active_mode: 'waiting', teacherId: userId, backgroundImage: null, isPaused: false, multiple_choice_questions: null }, { merge: true });
                     isResponsePaused = false; // Initialize local state
                     updateTeacherPauseButtonUI(); // Update button UI
                     currentMultipleChoiceQuestions = null; // Ensure this is cleared on new class
@@ -5764,7 +5835,15 @@ appId: &quot;...&quot;"></textarea>
             document.getElementById('teacher-classroom-code-input').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') document.getElementById('teacher-classroom-code-submit-btn').click();
             });
-            
+
+            // Recent classrooms select change event (Teacher)
+            document.getElementById('teacher-recent-classrooms-select').addEventListener('change', (e) => {
+                const selectedCode = e.target.value;
+                if (selectedCode) {
+                    document.getElementById('teacher-classroom-code-input').value = selectedCode;
+                }
+            });
+
             // Student name and classroom code submission.
             document.getElementById('submit-name-btn').addEventListener('click', async () => {
                 const studentClassroomCode = document.getElementById('student-classroom-code-input').value.trim();
@@ -5789,6 +5868,7 @@ appId: &quot;...&quot;"></textarea>
                         studentName = name;
                         document.getElementById('user-id-display').textContent = `${userId} (${studentName})`;
                         document.getElementById('student-welcome-msg').textContent = `你好，${studentName}！`;
+
                         listenToInteractionMode();
                         listenToPeerReviewStatus(); // NEW: Listen for peer review status
                         showView('studentWaiting');
@@ -6468,6 +6548,9 @@ appId: &quot;...&quot;"></textarea>
             document.getElementById('end-class-session-menu-btn').addEventListener('click', endClassSession);
             document.getElementById('end-class-session-monitor-btn').addEventListener('click', endClassSession);
 
+            // Leave Classroom Button (without deleting data)
+            document.getElementById('leave-classroom-btn').addEventListener('click', leaveClassroom);
+
             // NEW: Multiple Choice Settings Modal Listeners
             const multipleChoiceSettingsModal = document.getElementById('multiple-choice-settings-modal');
             const multipleChoiceSettingsModalCloseBtn = document.getElementById('multiple-choice-settings-modal-close-btn');
@@ -6521,6 +6604,7 @@ appId: &quot;...&quot;"></textarea>
                 if (password === 'tpet') {
                     teacherPasswordModal.classList.add('hidden');
                     teacherPasswordInput.value = '';
+                    loadRecentClassrooms(); // Load recent classrooms for teacher
                     showView('teacherClassroomCode');
                 } else {
                     showMessage('密碼錯誤！', 'error');
@@ -7898,6 +7982,108 @@ appId: &quot;...&quot;"></textarea>
                 document.getElementById('firebase-qrcode-container').classList.add('hidden');
 
                 console.log("Firebase 本地設定已清除");
+            }
+        }
+
+        /**
+         * Load recent classrooms from localStorage and populate teacher select dropdown
+         */
+        function loadRecentClassrooms() {
+            const recentClassroomsStr = localStorage.getItem('recentClassrooms');
+            if (!recentClassroomsStr) {
+                return;
+            }
+
+            try {
+                const recentClassrooms = JSON.parse(recentClassroomsStr);
+                if (!Array.isArray(recentClassrooms) || recentClassrooms.length === 0) {
+                    return;
+                }
+
+                // Get teacher elements
+                const container = document.getElementById('teacher-recent-classrooms-container');
+                const select = document.getElementById('teacher-recent-classrooms-select');
+
+                if (!container || !select) {
+                    return;
+                }
+
+                // Clear existing options except the first one
+                select.innerHTML = '<option value="">-- 選擇教室代碼 --</option>';
+
+                // Add classroom codes as options
+                recentClassrooms.forEach(code => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = code;
+                    select.appendChild(option);
+                });
+
+                container.classList.remove('hidden');
+            } catch (error) {
+                console.error('載入最近教室代碼失敗:', error);
+            }
+        }
+
+        /**
+         * Save classroom code to recent classrooms in localStorage
+         * @param {string} code - Classroom code to save
+         */
+        function saveRecentClassroom(code) {
+            if (!code) return;
+
+            try {
+                const recentClassroomsStr = localStorage.getItem('recentClassrooms');
+                let recentClassrooms = [];
+
+                if (recentClassroomsStr) {
+                    recentClassrooms = JSON.parse(recentClassroomsStr);
+                }
+
+                // Remove if already exists (to move to front)
+                recentClassrooms = recentClassrooms.filter(c => c !== code);
+
+                // Add to front
+                recentClassrooms.unshift(code);
+
+                // Keep only last 5
+                recentClassrooms = recentClassrooms.slice(0, 5);
+
+                localStorage.setItem('recentClassrooms', JSON.stringify(recentClassrooms));
+            } catch (error) {
+                console.error('保存最近教室代碼失敗:', error);
+            }
+        }
+
+        /**
+         * Remove classroom code from recent classrooms in localStorage
+         * @param {string} code - Classroom code to remove
+         */
+        function removeRecentClassroom(code) {
+            if (!code) return;
+
+            try {
+                const recentClassroomsStr = localStorage.getItem('recentClassrooms');
+                if (!recentClassroomsStr) {
+                    return;
+                }
+
+                let recentClassrooms = JSON.parse(recentClassroomsStr);
+
+                // Remove the code from the list
+                recentClassrooms = recentClassrooms.filter(c => c !== code);
+
+                // Save back to localStorage
+                if (recentClassrooms.length > 0) {
+                    localStorage.setItem('recentClassrooms', JSON.stringify(recentClassrooms));
+                } else {
+                    // If list is empty, remove the key entirely
+                    localStorage.removeItem('recentClassrooms');
+                }
+
+                console.log(`已從最近教室列表中刪除: ${code}`);
+            } catch (error) {
+                console.error('刪除最近教室代碼失敗:', error);
             }
         }
 
