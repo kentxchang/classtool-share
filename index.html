@@ -15,48 +15,38 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        /* --- 全新初始畫面美化樣式 --- */
-        body.initial-view-background {
-            background-color: #f0f4f8; /* Fallback */
-            background-image:
-                radial-gradient(circle at 1px 1px, #d1d5db 1px, transparent 0),
-                radial-gradient(circle at 20px 20px, #d1d5db 1px, transparent 0);
-            background-size: 40px 40px;
+        /* Animations from 剛好測分享版 */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+        .animate-fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
+        
+        /* Scrollbar customization */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        .role-card {
-            display: flex;
+        /* Landing Page Card Styles */
+        .landing-card {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1.5rem; /* rounded-3xl */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* shadow-xl */
+            transition: all 0.3s ease;
+            cursor: pointer; /* Cards are clickable in 剛好學最新版 */
+            border: 1px solid #f1f5f9; /* border-slate-100 */
+            position: relative;
+            overflow: hidden;
+            display: flex; /* Make cards use flex for internal alignment */
             flex-direction: column;
             align-items: center;
-            background-color: #ffffff;
-            padding: 2rem 1.5rem;
-            border-radius: 1rem;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
-            transition: all 0.3s ease-in-out;
             text-align: center;
         }
-        .role-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
-            border-color: #93c5fd; /* Light blue border on hover */
+        .landing-card:hover {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* shadow-2xl */
         }
-        .role-card-icon {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            transition: all 0.3s ease-in-out;
-        }
-        .role-card .btn {
-            font-size: 1.1rem;
-            padding-top: 0.625rem;
-            padding-bottom: 0.625rem;
-        }
-        /* --- 初始畫面樣式結束 --- */
 
         /* 自訂樣式 */
         body {
@@ -65,7 +55,7 @@
         }
         /* 隱藏元素的通用 class */
         .hidden {
-            display: none;
+            display: none !important;
         }
         /* 按鈕樣式 (直接在 HTML 中使用 Tailwind class，不使用 @apply) */
         .btn {
@@ -96,6 +86,7 @@
         .btn-teal { background-color: #0d9488; } /* New Teal color */
         .btn-teal:hover { background-color: #0f766e; }
         .btn-gray { background-color: #9ca3af; cursor: not-allowed; }
+
 
         /* 搶答按鈕樣式 */
         .quick-answer-btn {
@@ -463,6 +454,11 @@
             align-items: center;
             z-index: 1000;
             backdrop-filter: blur(5px);
+        }
+
+        /* API Error Modal - highest z-index to always show on top */
+        #api-error-modal {
+            z-index: 10000 !important;
         }
         .magnified-image-modal-content {
             position: relative;
@@ -1124,347 +1120,669 @@
         .matching-line.incorrect {
             stroke: #ef4444;
         }
+
+        /* Reading Comprehension - Highlighter Styles */
+        .highlighter-btn {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .highlighter-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+        }
+        .highlighter-btn.active {
+            border-color: #374151 !important;
+            border-width: 3px;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+        }
+        .highlighter-btn.active::after {
+            content: '✓';
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            background-color: #374151;
+            color: white;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        #eraser-btn:hover, #reading-eraser-btn:hover {
+            background-color: #f3f4f6;
+            transform: scale(1.1);
+        }
+        #eraser-btn.active, #reading-eraser-btn.active {
+            background-color: #374151;
+            border-color: #374151;
+            border-width: 3px;
+            position: relative;
+        }
+        #eraser-btn.active i, #reading-eraser-btn.active i {
+            color: white;
+        }
+        #eraser-btn.active::after, #reading-eraser-btn.active::after {
+            content: '✓';
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            background-color: #374151;
+            color: white;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            font-size: 10px;
+            line-height: 16px;
+            text-align: center;
+        }
+
+        /* Highlighted text spans */
+        .highlight {
+            padding: 2px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .highlight:hover {
+            opacity: 0.8;
+        }
+        .highlight.yellow {
+            background-color: rgba(254, 240, 138, 0.6);
+        }
+        .highlight.green {
+            background-color: rgba(134, 239, 172, 0.6);
+        }
+        .highlight.pink {
+            background-color: rgba(253, 164, 175, 0.6);
+        }
+        .highlight.blue {
+            background-color: rgba(147, 197, 253, 0.6);
+        }
+
+        /* Eraser mode cursor and hover effect */
+        #reading-text-display.eraser-mode {
+            cursor: pointer;
+        }
+        #reading-text-display.eraser-mode .highlight {
+            cursor: pointer;
+        }
+        #reading-text-display.eraser-mode .highlight:hover {
+            opacity: 0.5;
+            text-decoration: line-through;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+
+        /* Reading comprehension question cards */
+        #reading-questions-container .question-card {
+            background: linear-gradient(to right, #f0fdf4, #ecfdf5);
+            border-left: 4px solid #10b981;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+        #reading-questions-container .question-card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateX(4px);
+        }
+
+        /* Touch device optimizations */
+        #reading-text-display {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+            -webkit-touch-callout: default;
+        }
+
+        /* Larger touch targets for highlighter buttons on mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .highlighter-btn, #reading-eraser-btn {
+                min-width: 44px;
+                min-height: 44px;
+                touch-action: manipulation;
+            }
+
+            /* Improve touch feedback */
+            .highlighter-btn:active, #reading-eraser-btn:active {
+                transform: scale(0.95);
+                transition: transform 0.1s;
+            }
+
+            /* Make highlights easier to tap on touch devices */
+            .highlight {
+                padding: 4px 2px;
+                min-height: 24px;
+                display: inline-block;
+            }
+        }
+
+        /* Disable pull-to-refresh on iOS/iPadOS */
+        body {
+            overscroll-behavior-y: none;
+        }
+
+        #interaction-reading-comprehension {
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
+<body class="bg-indigo-50 text-slate-800">
 
-    <div id="app-container" class="w-full max-w-4xl mx-auto p-4 md:p-6">
+    <div id="app-container" class="relative min-h-screen flex flex-col">
 
-        <div id="entry-view" class="w-full h-screen flex flex-col items-center justify-center p-4">
+        <div id="entry-view" class="relative w-full h-screen flex flex-col items-center justify-around p-4 overflow-y-auto">
+            
             <!-- 右上角按鈕區 -->
             <div class="absolute top-4 right-4 z-10 flex gap-2">
-                <button id="firebase-settings-btn" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-md transition-all duration-200 hover:shadow-lg" title="Firebase 設定">
-                    <i class="fas fa-cog mr-2"></i>
+                <button id="firebase-settings-btn" class="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-md hover:bg-white text-slate-600 text-sm font-medium rounded-xl shadow-sm border border-slate-200 transition-all duration-200" title="Firebase 設定">
+                    <i class="fas fa-cog mr-2 text-slate-400"></i>
                     Firebase 設定
                 </button>
                 <a href="https://filedn.com/laMtL9jmKf7JrDEQG0A6OPy/html/%E5%89%9B%E5%A5%BD%E5%AD%B8%E6%9C%80%E6%96%B0%E7%89%88-%E5%BB%BA%E7%BD%AE%E6%89%8B%E5%86%8A/%E5%89%9B%E5%A5%BD%E5%AD%B8%E6%95%99%E5%B8%AB%E4%BD%BF%E7%94%A8%E5%BB%BA%E7%BD%AE%E6%89%8B%E5%86%8ANew.html" target="_blank" rel="noopener noreferrer"
-                   class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-md transition-all duration-200 hover:shadow-lg">
-                    <i class="fas fa-play-circle mr-2"></i>
+                   class="inline-flex items-center px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-sm font-medium rounded-xl shadow-sm border border-amber-200 transition-all duration-200">
+                    <i class="fas fa-book-open mr-2"></i>
                     建置操作手冊
                 </a>
             </div>
-            
-            <div class="w-full max-w-3xl bg-white/80 backdrop-blur-sm p-8 md:p-12 rounded-2xl shadow-xl text-center border border-gray-200">
-        
-                <div class="flex flex-col md:flex-row items-center justify-center mb-6">
-                    <i class="fas fa-rocket text-5xl text-indigo-500 mb-4 md:mb-0 md:mr-6"></i>
-                    <div>
-                        <h1 class="text-4xl md:text-5xl font-bold text-gray-800">剛好學：課堂互動so easy</h1>
-                        <p class="text-lg text-gray-600 mt-2">一個專為現代課堂設計的即時互動工具</p>
-                    </div>
-                </div>
+
+            <!-- Main Content wrapper -->
+            <div class="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col items-center animate-fade-in-up">
                 
-                <hr class="my-8 border-gray-200">
-        
-                <p class="text-xl font-medium text-gray-700 mb-6">請選擇您的角色以開始</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="role-card group">
-                        <div class="role-card-icon bg-blue-100 text-blue-500 group-hover:bg-blue-500 group-hover:text-white">
-                            <i class="fas fa-chalkboard-teacher"></i>
+                <div class="text-center mb-8">
+                    <div class="flex items-center justify-center gap-3 mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-indigo-200">
+                            <i class="fas fa-graduation-cap"></i>
                         </div>
-                        <h2 class="text-2xl font-bold text-gray-800 mt-4">我是教師</h2>
-                        <p class="text-gray-500 my-2 h-12">建立教室，發起互動，即時查看學生反饋。</p>
-                        <button id="teacher-entry-btn" class="btn btn-primary !w-full">建立或進入教室</button>
+                        <h1 class="text-4xl md:text-5xl font-bold text-slate-800">剛好學：課堂互動so easy</h1>
                     </div>
-                    <div class="role-card group">
-                         <div class="role-card-icon bg-green-100 text-green-500 group-hover:bg-green-500 group-hover:text-white">
-                            <i class="fas fa-user-graduate"></i>
-                         </div>
-                         <h2 class="text-2xl font-bold text-gray-800 mt-4">我是學生</h2>
-                         <p class="text-gray-500 my-2 h-12">輸入教室代碼，參與課堂問答與互動。</p>
-                        <button id="student-entry-btn" class="btn btn-green !w-full">加入課堂</button>
+                    <p class="text-lg text-slate-500">一個專為現代課堂設計的即時互動工具</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full md:max-w-5xl">
+                    
+                    <!-- Teacher Section -->
+                    <div class="landing-card group relative">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-pink-100 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition duration-500"></div>
+                        <div class="relative z-10 flex flex-col h-full">
+                            <div class="w-16 h-16 bg-pink-100 text-pink-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:bg-pink-600 group-hover:text-white transition shadow-sm">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-slate-800 mb-2">我是教師</h2>
+                            <p class="text-slate-500 mb-6">建立教室，發起互動，即時查看學生反饋。</p>
+                            
+                            <div class="mt-auto">
+                                <button id="teacher-entry-btn" class="w-full py-3 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600 transition shadow-lg shadow-pink-200">
+                                    建立或進入教室 <i class="fas fa-arrow-right ml-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Section -->
+                    <div class="landing-card group relative">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-sky-100 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition duration-500"></div>
+                        <div class="relative z-10 flex flex-col h-full">
+                            <div class="w-16 h-16 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:bg-sky-600 group-hover:text-white transition shadow-sm">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-slate-800 mb-2">我是學生</h2>
+                            <p class="text-slate-500 mb-6">輸入教室代碼，參與課堂問答與互動。</p>
+                            
+                            <div class="mt-auto">
+                                <button id="student-entry-btn" class="w-full py-3 bg-sky-500 text-white rounded-xl font-bold hover:bg-sky-600 transition shadow-lg shadow-sky-200">
+                                    加入課堂 <i class="fas fa-sign-in-alt ml-2"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        
-            <div class="text-center mt-6 text-gray-600">
-                <p class="text-xs">App ID: <span id="app-id-display"></span> &nbsp;&bull;&nbsp; User ID: <span id="user-id-display"></span></p>
-                <div class="mt-2">
-                    <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="made-by-text !bg-white/50 !text-indigo-600 hover:!bg-white">
-                       Made by 阿剛老師V3
-                    </a>
+
+                <div class="text-center mt-8">
+                    <p class="text-xs text-slate-400">App ID: <span id="app-id-display"></span> &nbsp;&bull;&nbsp; User ID: <span id="user-id-display"></span></p>
+                    <div class="mt-2 text-slate-400 text-sm">
+                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4</a>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="teacher-classroom-code-view" class="hidden text-center">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">教師登入：請輸入教室代碼</h2>
-            <div class="max-w-sm mx-auto space-y-4">
-                <!-- 已開啟教室代碼選單 -->
-                <div id="teacher-recent-classrooms-container" class="hidden mb-4">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2 text-left">選擇已開啟的教室：</label>
-                    <select id="teacher-recent-classrooms-select" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                        <option value="">-- 選擇教室代碼 --</option>
-                    </select>
+        <div id="teacher-classroom-code-view" class="hidden text-center w-full max-w-md mx-auto mt-10">
+            <div class="landing-card p-8">
+                <div class="mb-6 inline-block p-4 bg-blue-100 text-blue-600 rounded-full text-3xl">
+                    <i class="fas fa-chalkboard-user"></i>
                 </div>
-
-                <div class="text-sm text-gray-500">或手動輸入新代碼：</div>
-
-                <input type="text" id="teacher-classroom-code-input" placeholder="請輸入自訂教室代碼" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button id="teacher-classroom-code-submit-btn" class="btn btn-primary mt-4">進入教師面板 ➡️</button>
-                <button id="teacher-classroom-code-back-btn" class="btn btn-gray mt-2">返回 ↩️</button>
-            </div>
-        </div>
-
-        <div id="teacher-menu-view" class="hidden text-center relative">
-            <h2 class="text-3xl font-bold text-gray-800 mb-8">教師面板：請選擇互動模式</h2>
-            <div class="absolute top-4 right-4 flex flex-col items-end">
-                <div class="flex items-center gap-2 p-2 rounded-md bg-white shadow-sm">
-                    <div id="student-status-area" class="text-gray-600 text-lg cursor-pointer flex items-center justify-center hover:bg-gray-200 transition-colors">
-                        <span>目前有 <span id="active-student-count" class="font-bold text-blue-700">0</span> 位學生在線</span>
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">教師登入：請輸入教室代碼</h2>
+                <div class="space-y-4">
+                    <!-- 已開啟教室代碼選單 -->
+                    <div id="teacher-recent-classrooms-container" class="hidden mb-4 text-left">
+                        <label class="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">選擇已開啟的教室</label>
+                        <select id="teacher-recent-classrooms-select" class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 focus:bg-white transition">
+                            <option value="">-- 選擇教室代碼 --</option>
+                        </select>
                     </div>
-                    <button id="refresh-student-count-btn" class="text-gray-500 hover:text-blue-700 transition-colors" title="更新統計">
-                        <i class="fas fa-sync-alt"></i>
+
+                    <div class="relative flex items-center py-2">
+                        <div class="flex-grow border-t border-slate-200"></div>
+                        <span class="flex-shrink-0 mx-4 text-slate-400 text-xs">或手動輸入</span>
+                        <div class="flex-grow border-t border-slate-200"></div>
+                    </div>
+
+                    <input type="text" id="teacher-classroom-code-input" placeholder="請輸入自訂教室代碼" class="w-full p-3 border border-slate-200 rounded-xl text-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-slate-50 focus:bg-white text-center font-bold text-slate-700">
+                    
+                    <button id="teacher-classroom-code-submit-btn" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-bold hover:shadow-lg hover:from-blue-600 hover:to-indigo-700 transition transform hover:-translate-y-0.5 shadow-blue-200">
+                        進入教師面板 <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                    <button id="teacher-classroom-code-back-btn" class="w-full py-2 text-slate-400 text-sm hover:text-slate-600 font-medium transition">
+                        <i class="fas fa-arrow-left mr-1"></i> 返回
                     </button>
                 </div>
-                </div>
+            </div>
+        </div>
 
-            <div class="absolute top-4 left-4">
-                <button id="end-class-session-menu-btn" class="btn btn-red !w-auto text-base h-11 px-4 py-2 flex items-center justify-center" title="下課並清空資料">
-                    <i class="fas fa-door-open mr-2"></i> <span id="end-class-button-text">下課 🔚</span>
+        <div id="teacher-menu-view" class="hidden text-center relative w-full max-w-6xl mx-auto p-4">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fas fa-layer-group text-indigo-500"></i> 教師面板：請選擇互動模式
+                </h2>
+                
+                <div class="flex items-center gap-3 mt-4 md:mt-0">
+                    <button id="end-class-session-menu-btn" class="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold hover:bg-red-100 transition border border-red-100 flex items-center">
+                        <i class="fas fa-door-open mr-2"></i> <span id="end-class-button-text">下課 🔚</span>
+                    </button>
+                    
+                    <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200">
+                        <div id="student-status-area" class="text-slate-600 text-sm font-medium cursor-pointer flex items-center justify-center hover:text-indigo-600 transition-colors">
+                            <span>在線人數: <span id="active-student-count" class="font-bold text-indigo-600 text-lg">0</span></span>
+                        </div>
+                        <button id="refresh-student-count-btn" class="text-slate-400 hover:text-indigo-600 transition-colors" title="更新統計">
+                            <i class="fas fa-rotate"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mx-auto w-full">
+                <button data-mode="true_false" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-2xl group-hover:bg-blue-600 group-hover:text-white transition">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">是非題</span>
+                </button>
+                <button id="choice-sequencing-matching-menu-btn" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center text-2xl group-hover:bg-green-600 group-hover:text-white transition">
+                        <i class="fas fa-list-ol"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">選擇/排序/配對</span>
+                </button>
+                <button data-mode="text_input" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-2xl group-hover:bg-orange-600 group-hover:text-white transition">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">文字題</span>
+                </button>
+                <button data-mode="drawing" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl group-hover:bg-purple-600 group-hover:text-white transition">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">繪圖題</span>
+                </button>
+                <button data-mode="url_dispatch" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-teal-100 text-teal-600 flex items-center justify-center text-2xl group-hover:bg-teal-600 group-hover:text-white transition">
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">派送網址/HTML</span>
+                </button>
+                <button data-mode="recording" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl group-hover:bg-indigo-600 group-hover:text-white transition">
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">錄音題</span>
+                </button>
+                <button id="reading-comprehension-settings-btn" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl group-hover:bg-rose-600 group-hover:text-white transition">
+                        <i class="fas fa-book-open-reader"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">閱讀測驗</span>
+                </button>
+                <button data-mode="quick_answer" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl group-hover:bg-amber-600 group-hover:text-white transition">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">搶答</span>
+                </button>
+                <button id="quick-poll-settings-btn" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-lime-100 text-lime-600 flex items-center justify-center text-2xl group-hover:bg-lime-600 group-hover:text-white transition">
+                        <i class="fas fa-square-poll-vertical"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">快速投票</span>
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mx-auto w-fit">
-                <button data-mode="true_false" class="btn btn-primary !w-40 !h-40 flex items-center justify-center text-4xl">A. 是非題</button>
-                <button id="choice-sequencing-matching-menu-btn" class="btn btn-green !w-40 !h-40 flex items-center justify-center text-3xl">B. 選擇/排序/配對</button>
-                <button data-mode="text_input" class="btn btn-orange !w-40 !h-40 flex items-center justify-center text-4xl">C. 文字題</button>
-                <button data-mode="drawing" class="btn btn-purple !w-40 !h-40 flex items-center justify-center text-4xl">D. 繪圖題</button>
-                <button data-mode="url_dispatch" class="btn btn-teal !w-40 !h-40 flex items-center justify-center text-4xl">E. 派送網址/HTML</button>
-                <button data-mode="recording" class="btn bg-indigo-600 hover:bg-indigo-700 !w-40 !h-40 flex items-center justify-center text-4xl">F. 錄音題</button>
-                <button id="reading-comprehension-settings-btn" class="btn bg-red-500 hover:bg-red-600 !w-40 !h-40 flex items-center justify-center text-4xl">G. 閱讀測驗</button>
-                <button data-mode="quick_answer" class="btn bg-orange-500 hover:bg-orange-600 !w-40 !h-40 flex items-center justify-center text-4xl">H. 搶答</button>
-                <button id="quick-poll-settings-btn" class="btn bg-lime-500 hover:bg-lime-600 !w-40 !h-40 flex items-center justify-center text-4xl">I. 快速投票</button>
-            </div>
-            <div class="mt-8 flex flex-col items-center">
-                <div class="flex gap-4 mb-4">
-                    <label for="teacher-image-upload-input" class="btn btn-purple !w-auto text-base h-11 px-4 py-2 flex items-center justify-center cursor-pointer">
-                        <i class="fas fa-upload mr-2"></i> 上傳繪圖背景圖片 (教師用) 🖼️
+            <div class="mt-8 flex flex-col items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-2xl mx-auto">
+                <h3 class="text-lg font-bold text-slate-700 mb-4 flex items-center"><i class="fas fa-image mr-2 text-purple-500"></i> 背景圖片設定 (繪圖題用)</h3>
+                <div class="flex flex-wrap justify-center gap-4 mb-4 w-full">
+                    <label for="teacher-image-upload-input" class="flex-1 min-w-[160px] py-3 px-4 bg-purple-50 text-purple-700 rounded-xl font-bold hover:bg-purple-100 transition border border-purple-200 flex items-center justify-center cursor-pointer">
+                        <i class="fas fa-cloud-arrow-up mr-2"></i> 上傳圖片
                     </label>
                     <input type="file" id="teacher-image-upload-input" accept="image/*" class="hidden">
-                    <button id="clear-teacher-background-btn" class="btn btn-red !w-auto text-base h-11 px-4 py-2 flex items-center justify-center">
-                        <i class="fas fa-trash mr-2"></i> 清除背景圖 🗑️
+                    <button id="clear-teacher-background-btn" class="flex-1 min-w-[160px] py-3 px-4 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition border border-red-200 flex items-center justify-center">
+                        <i class="fas fa-trash-can mr-2"></i> 清除背景
                     </button>
                 </div>
-                <p id="teacher-image-status" class="text-gray-600 text-sm mt-2">目前沒有背景圖片。可選擇檔案或直接貼上(Ctrl+V)。</p>
-                <div id="teacher-image-preview-container" class="mt-4 hidden border border-gray-300 rounded-lg p-2 max-w-xs">
-                    <img id="teacher-image-preview" src="" alt="背景圖片預覽" class="w-full h-auto rounded-md object-contain">
+                <p id="teacher-image-status" class="text-slate-400 text-sm">目前沒有背景圖片。可選擇檔案或直接貼上(Ctrl+V)。</p>
+                <div id="teacher-image-preview-container" class="mt-4 hidden border border-slate-200 rounded-xl p-2 max-w-xs bg-slate-50">
+                    <img id="teacher-image-preview" src="" alt="背景圖片預覽" class="w-full h-auto rounded-lg object-contain shadow-sm">
                 </div>
             </div>
 
-            <div class="absolute bottom-4 left-4 flex gap-3">
-                <button id="leave-classroom-btn" class="btn btn-gray !w-auto text-sm h-10 px-3 py-2 flex items-center justify-center" title="暫離教室（保留資料）">
-                    <i class="fas fa-sign-out-alt mr-2"></i>暫離教室
+            <div class="flex justify-between items-center mt-8 px-4">
+                <button id="leave-classroom-btn" class="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium transition flex items-center" title="暫離教室（保留資料）">
+                    <i class="fas fa-arrow-right-from-bracket mr-2"></i>暫離教室
                 </button>
-                <button id="ai-settings-btn" class="text-gray-500 hover:text-blue-700 transition-colors text-3xl" title="AI 設定">
-                    <i class="fas fa-robot"></i>
-                </button>
-            </div>
-            <div class="absolute bottom-4 right-4">
-                 <button id="url-dispatch-settings-btn" class="text-gray-500 hover:text-teal-700 transition-colors text-3xl" title="設定派送網址/HTML">
-                    <i class="fas fa-link"></i>
-                </button>
+                <div class="flex gap-4">
+                    <button id="ai-settings-btn" class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-600 transition flex items-center justify-center text-lg shadow-sm" title="AI 設定">
+                        <i class="fas fa-robot"></i>
+                    </button>
+                    <button id="url-dispatch-settings-btn" class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 hover:bg-teal-100 hover:text-teal-600 transition flex items-center justify-center text-lg shadow-sm" title="設定派送網址/HTML">
+                        <i class="fas fa-link"></i>
+                    </button>
+                </div>
             </div>
         </div>
         
-        <div id="teacher-monitor-view" class="hidden">
-            <div class="flex justify-between items-center mb-6">
-                <div class="flex items-center gap-4"> <button id="end-class-session-monitor-btn" class="btn btn-red !w-auto text-base h-11 px-4 py-2 flex items-center justify-center" title="下課並清空資料">
-                        <i class="fas fa-door-open mr-2"></i> <span id="end-class-monitor-button-text">下課 🔚</span>
+        <div id="teacher-monitor-view" class="hidden w-full max-w-[95%] mx-auto p-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col lg:flex-row justify-between items-center gap-4 sticky top-4 z-20 backdrop-blur-sm bg-white/90">
+                <div class="flex items-center gap-4"> 
+                    <button id="end-class-session-monitor-btn" class="px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-bold hover:bg-red-600 transition shadow-md shadow-red-200 flex items-center" title="下課並清空資料">
+                        <i class="fas fa-door-open mr-2"></i> <span id="end-class-monitor-button-text">下課</span>
                     </button>
-                    <h2 class="text-3xl font-bold text-gray-800"></h2>
+                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight"></h2>
                 </div>
-                <div class="flex gap-2">
-                     <button id="toggle-pause-btn" class="btn bg-gray-500 hover:bg-gray-600 !w-auto text-sm">
-                        <i class="fas fa-pause mr-2"></i> <span id="toggle-pause-btn-text">暫停回覆 ⏸️</span>
+                <div class="flex flex-wrap justify-center gap-2">
+                     <button id="toggle-pause-btn" class="monitor-btn bg-slate-700 text-white hover:bg-slate-800">
+                        <i class="fas fa-pause mr-1.5"></i> <span id="toggle-pause-btn-text">暫停</span>
                      </button>
-                     <button id="draw-lottery-btn" class="btn btn-orange !w-auto text-sm">抽籤 🎲</button> <button id="show-unsubmitted-students-btn" class="btn btn-orange !w-auto text-sm hidden">未作答學生 📝</button>
-                     <button id="ai-text-summary-btn" class="btn btn-purple !w-auto text-sm hidden">AI 文字分析 🤖</button> 
-                     <button id="download-media-btn" class="btn btn-purple !w-auto text-sm hidden">下載所有媒體 💾</button> 
-                     <button id="show-statistics-btn" class="btn btn-primary !w-auto text-sm hidden">顯示統計 📊</button>
-                     <button id="start-peer-review-btn" class="btn btn-teal !w-auto text-sm hidden">開始互評 ❤️</button>
-                     <button id="view-questions-btn" class="btn bg-indigo-600 hover:bg-indigo-700 !w-auto text-sm hidden">查看題目 📝</button>
-                     <button id="view-reading-questions-btn" class="btn bg-red-600 hover:bg-red-700 !w-auto text-sm hidden">顯示題目 📖</button>
-                     <button id="download-responses-btn" class="btn btn-green !w-auto text-sm hidden">下載回應 📥</button>
-                     <button id="end-interaction-btn" class="btn btn-red !w-auto text-sm">結束互動 🛑</button>
+                     <button id="draw-lottery-btn" class="monitor-btn bg-orange-500 text-white hover:bg-orange-600 shadow-orange-200">抽籤 🎲</button> 
+                     <button id="show-unsubmitted-students-btn" class="monitor-btn bg-amber-500 text-white hover:bg-amber-600 shadow-amber-200 hidden">未作答 📝</button>
+                     <button id="ai-text-summary-btn" class="monitor-btn bg-violet-600 text-white hover:bg-violet-700 shadow-violet-200 hidden">AI 分析 🤖</button> 
+                     <button id="download-media-btn" class="monitor-btn bg-purple-500 text-white hover:bg-purple-600 shadow-purple-200 hidden">下載媒體 💾</button> 
+                     <button id="show-statistics-btn" class="monitor-btn bg-blue-500 text-white hover:bg-blue-600 shadow-blue-200 hidden">統計 📊</button>
+                     <button id="start-peer-review-btn" class="monitor-btn bg-teal-500 text-white hover:bg-teal-600 shadow-teal-200 hidden">互評 ❤️</button>
+                     <button id="view-questions-btn" class="monitor-btn bg-indigo-500 text-white hover:bg-indigo-600 shadow-indigo-200 hidden">題目 📝</button>
+                     <button id="view-reading-questions-btn" class="monitor-btn bg-rose-500 text-white hover:bg-rose-600 shadow-rose-200 hidden">題目 📖</button>
+                     <button id="download-responses-btn" class="monitor-btn bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-200 hidden">下載 📥</button>
+                     <button id="end-interaction-btn" class="monitor-btn bg-slate-200 text-slate-600 hover:bg-slate-300 font-bold border border-slate-300">結束 🛑</button>
                  </div>
             </div>
-            <div id="student-responses-container" class="bg-gray-100 p-4 rounded-lg h-96 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                <p class="text-gray-500 text-center col-span-full">正在等待學生作答...</p>
+            <div id="student-responses-container" class="bg-slate-100 p-6 rounded-2xl border border-slate-200 h-[calc(100vh-180px)] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 content-start">
+                <div class="col-span-full flex flex-col items-center justify-center py-20 text-slate-400">
+                    <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
+                    <p class="text-lg font-medium">正在等待學生作答...</p>
+                </div>
             </div>
             
             <div id="peer-review-stats-container" class="hidden mt-6">
-                <div class="bg-white p-4 rounded-lg border">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">📊 即時投票統計</h3>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 text-center flex items-center justify-center gap-2">
+                        <span class="w-8 h-8 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center text-sm"><i class="fas fa-chart-simple"></i></span>
+                        即時投票統計
+                    </h3>
                     <div id="peer-review-stats-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                        <p class="text-gray-500 text-center col-span-full">尚未開始互評...</p>
+                        <p class="text-slate-400 text-center col-span-full py-8">尚未開始互評...</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="student-name-view" class="text-center hidden">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">請輸入教室代碼與您的姓名</h2>
-            <div class="max-w-sm mx-auto space-y-4">
-                <input type="text" id="student-classroom-code-input" placeholder="請輸入教室代碼" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <input type="text" id="student-name-input" placeholder="例如：王小明" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button id="submit-name-btn" class="btn btn-primary mt-4">進入教室 🚪</button>
-            </div>
-        </div>
-        
-        <div id="student-waiting-view" class="text-center hidden">
-             <h2 id="student-welcome-msg" class="text-3xl font-bold text-gray-800 mb-6"></h2>
-             <div class="flex items-center justify-center space-x-3 text-xl text-gray-600">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>請等待老師開始互動...</p>
-            </div>
-        </div>
-        
-        <div id="student-interaction-view" class="hidden relative">
-            <div id="student-pause-overlay" class="pause-overlay hidden">
-                <p>老師已暫停回覆</p>
-                <i class="fas fa-hand-paper"></i>
-            </div>
-
-            <div id="interaction-true-false" class="hidden">
-                <h3 class="text-2xl font-bold text-center mb-6">是非題</h3>
-                <div class="flex justify-center gap-4">
-                    <button data-answer="O" class="answer-btn text-6xl w-32 h-32 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg transform hover:scale-110 transition">O</button>
-                    <button data-answer="X" class="answer-btn text-6xl w-32 h-32 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg transform hover:scale-110 transition">X</button>
+        <div id="student-name-view" class="hidden text-center w-full max-w-md mx-auto mt-10">
+            <div class="landing-card p-8">
+                <div class="mb-6 inline-block p-4 bg-green-100 text-green-600 rounded-full text-3xl">
+                    <i class="fas fa-user-tag"></i>
                 </div>
-            </div>
-            <div id="interaction-multiple-choice" class="hidden flex flex-col items-center">
-                <h3 class="text-2xl font-bold text-center mb-6">選擇題</h3>
-                <div id="default-mc-options" class="grid grid-cols-2 gap-4">
-                     <button data-answer="1" class="answer-btn btn bg-blue-500 hover:bg-blue-600 h-24 text-7xl">1</button>
-                     <button data-answer="2" class="answer-btn btn bg-yellow-500 hover:bg-yellow-600 h-24 text-7xl">2</button>
-                     <button data-answer="3" class="answer-btn btn bg-green-500 hover:bg-green-600 h-24 text-7xl">3</button>
-                     <button data-answer="4" class="answer-btn btn bg-red-500 hover:bg-red-600 h-24 text-7xl">4</button>
-                </div>
-                <div id="custom-mc-questions-container" class="hidden w-full max-w-2xl space-y-6 text-left">
-                    </div>
-                <button id="submit-custom-mc-btn" class="btn btn-primary mt-6 hidden max-w-sm mx-auto">送出全部答案 ✉️</button>
-            </div>
-            <div id="interaction-text-input" class="hidden text-center">
-                 <h3 class="text-2xl font-bold text-center mb-6">文字題</h3>
-                 <textarea id="text-input-area" rows="6" class="w-full p-3 border rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="請在此輸入您的回答..."></textarea>
-                 <button id="submit-text-btn" class="btn btn-primary mt-4 max-w-sm mx-auto">送出回答 ✉️</button>
-            </div>
-            <div id="interaction-drawing" class="hidden text-center flex flex-col h-full min-h-screen">
-                <h3 class="text-2xl font-bold text-center mb-4">繪圖題</h3>
-                <div class="flex flex-wrap justify-center md:justify-start items-center gap-4 mb-4 p-2 bg-gray-50 rounded-lg shadow-sm flex-shrink-0">
-                    <button id="pen-tool-btn" class="p-2 rounded-lg border-2 border-blue-500 transition-all duration-150 ease-in-out h-11 flex items-center" title="畫筆">
-                        <i class="fas fa-paint-brush mr-1"></i> 畫筆 ✏️
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">請輸入教室代碼與您的姓名</h2>
+                <div class="space-y-4">
+                    <input type="text" id="student-classroom-code-input" placeholder="請輸入教室代碼" class="w-full p-3 border border-slate-200 rounded-xl text-lg focus:ring-2 focus:ring-green-500 outline-none transition bg-slate-50 focus:bg-white text-center font-bold text-slate-700">
+                    <input type="text" id="student-name-input" placeholder="例如：王小明" class="w-full p-3 border border-slate-200 rounded-xl text-lg focus:ring-2 focus:ring-green-500 outline-none transition bg-slate-50 focus:bg-white text-center font-bold text-slate-700">
+                    <button id="submit-name-btn" class="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:shadow-lg hover:from-green-600 hover:to-emerald-700 transition transform hover:-translate-y-0.5 shadow-green-200">
+                        進入教室 <i class="fas fa-door-open ml-2"></i>
                     </button>
-                    <div class="flex items-center gap-2">
-                        <label class="text-gray-700 font-medium flex items-center" for="color-select">
-                            <span id="current-color-swatch" class="color-swatch mr-2 bg-black"></span> 顏色:
-                        </label>
-                        <select id="color-select" class="drawing-tool-select">
-                            <option value="black" style="background-color: black; color: white;">黑色</option>
-                            <option value="red" style="background-color: red; color: white;">紅色</option>
-                            <option value="blue" style="background-color: blue; color: white;">藍色</option>
-                            <option value="green" style="background-color: green; color: white;">綠色</option>
-                            <option value="yellow" style="background-color: yellow; color: black;">黃色</option>
-                        </select>
+                </div>
+            </div>
+        </div>
+        
+        <div id="student-waiting-view" class="hidden text-center w-full max-w-md mx-auto mt-20">
+             <div class="landing-card p-10">
+                 <div class="mb-6 inline-block p-4 bg-indigo-50 text-indigo-500 rounded-full text-4xl animate-bounce">
+                    <i class="fas fa-child-reaching"></i>
+                 </div>
+                 <h2 id="student-welcome-msg" class="text-2xl font-bold text-slate-800 mb-4"></h2>
+                 <div class="flex items-center justify-center space-x-3 text-lg text-slate-500 bg-slate-50 py-3 px-6 rounded-full inline-flex">
+                    <i class="fas fa-spinner fa-spin text-indigo-500"></i>
+                    <p>請等待老師開始互動...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="student-interaction-view" class="hidden relative w-full h-full min-h-screen">
+            <div id="student-pause-overlay" class="pause-overlay hidden backdrop-blur-sm bg-white/80">
+                <div class="bg-white p-8 rounded-3xl shadow-2xl border-4 border-red-100 text-center animate-bounce">
+                    <i class="fas fa-hand text-6xl text-red-500 mb-4 block"></i>
+                    <p class="text-2xl font-bold text-red-600">老師已暫停回覆</p>
+                </div>
+            </div>
+
+            <div id="interaction-true-false" class="hidden w-full max-w-4xl mx-auto pt-10 text-center">
+                <h3 class="text-3xl font-bold text-slate-800 mb-10 flex items-center justify-center gap-3">
+                    <span class="bg-blue-100 text-blue-600 p-2 rounded-lg"><i class="fas fa-check"></i></span> 是非題
+                </h3>
+                <div class="flex justify-center gap-8">
+                    <button data-answer="O" class="answer-btn text-8xl w-40 h-40 rounded-3xl bg-green-500 text-white flex items-center justify-center shadow-xl shadow-green-200 transform hover:scale-110 hover:rotate-3 transition duration-200 border-b-8 border-green-700 active:border-b-0 active:translate-y-2">O</button>
+                    <button data-answer="X" class="answer-btn text-8xl w-40 h-40 rounded-3xl bg-red-500 text-white flex items-center justify-center shadow-xl shadow-red-200 transform hover:scale-110 hover:-rotate-3 transition duration-200 border-b-8 border-red-700 active:border-b-0 active:translate-y-2">X</button>
+                </div>
+            </div>
+            <div id="interaction-multiple-choice" class="hidden flex flex-col items-center w-full max-w-4xl mx-auto pt-10">
+                <h3 class="text-3xl font-bold text-slate-800 mb-10 flex items-center justify-center gap-3">
+                    <span class="bg-green-100 text-green-600 p-2 rounded-lg"><i class="fas fa-list-ul"></i></span> 選擇題
+                </h3>
+                <div id="default-mc-options" class="grid grid-cols-2 gap-6 w-full max-w-2xl px-4">
+                     <button data-answer="1" class="answer-btn btn bg-blue-500 hover:bg-blue-600 h-32 text-7xl rounded-2xl shadow-lg shadow-blue-200 border-b-8 border-blue-700 active:border-b-0 active:translate-y-2 transition-all">1</button>
+                     <button data-answer="2" class="answer-btn btn bg-yellow-500 hover:bg-yellow-600 h-32 text-7xl rounded-2xl shadow-lg shadow-yellow-200 border-b-8 border-yellow-700 active:border-b-0 active:translate-y-2 transition-all">2</button>
+                     <button data-answer="3" class="answer-btn btn bg-green-500 hover:bg-green-600 h-32 text-7xl rounded-2xl shadow-lg shadow-green-200 border-b-8 border-green-700 active:border-b-0 active:translate-y-2 transition-all">3</button>
+                     <button data-answer="4" class="answer-btn btn bg-red-500 hover:bg-red-600 h-32 text-7xl rounded-2xl shadow-lg shadow-red-200 border-b-8 border-red-700 active:border-b-0 active:translate-y-2 transition-all">4</button>
+                </div>
+                <div id="custom-mc-questions-container" class="hidden w-full max-w-3xl space-y-6 text-left px-4">
                     </div>
+                <button id="submit-custom-mc-btn" class="btn bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 mt-8 hidden max-w-sm mx-auto rounded-xl shadow-lg">送出全部答案 <i class="fas fa-paper-plane ml-2"></i></button>
+            </div>
+            <div id="interaction-text-input" class="hidden text-center w-full max-w-3xl mx-auto pt-10 px-4">
+                 <h3 class="text-3xl font-bold text-slate-800 mb-8 flex items-center justify-center gap-3">
+                    <span class="bg-orange-100 text-orange-600 p-2 rounded-lg"><i class="fas fa-comment-dots"></i></span> 文字題
+                 </h3>
+                 <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-100">
+                    <textarea id="text-input-area" rows="6" class="w-full p-4 border border-slate-200 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-slate-50 focus:bg-white transition resize-none" placeholder="請在此輸入您的回答..."></textarea>
+                 </div>
+                 <button id="submit-text-btn" class="btn bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 mt-6 max-w-xs mx-auto rounded-xl shadow-lg shadow-orange-200 text-lg py-3">送出回答 <i class="fas fa-paper-plane ml-2"></i></button>
+            </div>
+            <div id="interaction-drawing" class="hidden text-center flex flex-col h-full min-h-screen bg-slate-100">
+                <div class="bg-white shadow-sm p-3 flex flex-wrap justify-between items-center gap-3 z-10 sticky top-0">
                     <div class="flex items-center gap-2">
-                        <label class="text-gray-700 font-medium" for="size-select">粗細:</label>
-                        <select id="size-select" class="drawing-tool-select">
-                            <option value="2">細</option>
-                            <option value="5">中</option>
-                            <option value="10">粗</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button id="eraser-btn" class="p-2 rounded-lg border-2 border-transparent hover:bg-gray-200 transition-all duration-150 ease-in-out h-11" title="橡皮擦"><i class="fas fa-eraser mr-1"></i> 橡皮擦 🧼</button>
-                        <button id="clear-canvas-btn" class="p-2 rounded-lg border-2 border-transparent hover:bg-gray-200 transition-all duration-150 ease-in-out h-11" title="清除畫布"><i class="fas fa-trash mr-1"></i> 清除 🧹</button>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <label for="student-image-upload-input" class="btn btn-purple !w-auto text-base h-11 px-4 py-2 flex items-center justify-center cursor-pointer">
-                            <i class="fas fa-upload mr-2"></i> 上傳圖片 🖼️
-                        </label>
-                        <input type="file" id="student-image-upload-input" accept="image/*" class="hidden">
-                        <button id="clear-student-image-btn" class="btn btn-red !w-auto text-base h-11 px-4 py-2 flex items-center justify-center">
-                            <i class="fas fa-trash mr-2"></i> 清除圖片 🗑️
+                        <h3 class="text-xl font-bold text-slate-800 mr-2 hidden md:block">繪圖題</h3>
+                        <button id="pen-tool-btn" class="w-10 h-10 rounded-lg border-2 border-purple-500 text-purple-600 bg-purple-50 flex items-center justify-center hover:bg-purple-100 transition" title="畫筆">
+                            <i class="fas fa-pencil"></i>
+                        </button>
+                        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                            <span id="current-color-swatch" class="w-6 h-6 rounded-full bg-black border border-slate-300 ml-1"></span>
+                            <select id="color-select" class="bg-transparent border-none text-sm focus:ring-0 cursor-pointer w-20">
+                                <option value="black">黑色</option>
+                                <option value="red">紅色</option>
+                                <option value="blue">藍色</option>
+                                <option value="green">綠色</option>
+                                <option value="yellow">黃色</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                            <i class="fas fa-circle text-xs text-slate-400 ml-2"></i>
+                            <select id="size-select" class="bg-transparent border-none text-sm focus:ring-0 cursor-pointer w-16">
+                                <option value="2">細</option>
+                                <option value="5">中</option>
+                                <option value="10">粗</option>
+                            </select>
+                        </div>
+                        <button id="eraser-btn" class="w-10 h-10 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center transition" title="橡皮擦">
+                            <i class="fas fa-eraser"></i>
+                        </button>
+                        <button id="clear-canvas-btn" class="w-10 h-10 rounded-lg border border-slate-200 text-red-500 hover:bg-red-50 flex items-center justify-center transition" title="清除畫布">
+                            <i class="fas fa-trash-can"></i>
                         </button>
                     </div>
-                    <div class="flex items-center gap-2 mt-2 md:mt-0 ml-auto">
-                        <button id="submit-drawing-btn" class="btn btn-primary !w-auto text-base h-11 px-4 py-2 flex items-center justify-center">送出 🚀</button> </div>
+                    <div class="flex items-center gap-2">
+                        <label for="student-image-upload-input" class="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center cursor-pointer hover:bg-purple-200 transition" title="上傳圖片">
+                            <i class="fas fa-image"></i>
+                        </label>
+                        <input type="file" id="student-image-upload-input" accept="image/*" class="hidden">
+                        <button id="clear-student-image-btn" class="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200 transition" title="移除圖片">
+                            <i class="fas fa-image-portrait"></i><i class="fas fa-slash absolute text-xs"></i>
+                        </button>
+                        <div class="w-px h-8 bg-slate-200 mx-1"></div>
+                        <button id="submit-drawing-btn" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-bold hover:shadow-lg transition flex items-center">
+                            送出 <i class="fas fa-paper-plane ml-2"></i>
+                        </button>
+                    </div>
                 </div>
-                <canvas id="drawing-canvas"></canvas>
+                <div class="flex-grow bg-slate-200 p-4 overflow-hidden flex items-center justify-center">
+                    <canvas id="drawing-canvas" class="shadow-lg bg-white rounded-lg"></canvas>
+                </div>
             </div>
-            <div id="interaction-url-dispatch" class="hidden">
+            <div id="interaction-url-dispatch" class="hidden p-4">
                 </div>
             <div id="interaction-recording" class="hidden text-center flex flex-col items-center justify-center h-full min-h-screen p-4">
-                <h3 class="text-2xl font-bold text-center mb-6">錄音題</h3>
-                <div class="flex items-center justify-center space-x-3 text-xl text-gray-600 mb-6">
-                    <i id="recording-status-icon" class="fas fa-microphone-alt text-gray-400"></i>
-                    <p id="recording-status-text">準備錄音...</p>
+                <h3 class="text-3xl font-bold text-slate-800 mb-8 flex items-center justify-center gap-3">
+                    <span class="bg-indigo-100 text-indigo-600 p-2 rounded-lg"><i class="fas fa-microphone-lines"></i></span> 錄音題
+                </h3>
+                <div class="bg-white p-10 rounded-3xl shadow-xl border border-slate-100 max-w-lg w-full">
+                    <div class="flex items-center justify-center space-x-3 text-xl text-slate-500 mb-8">
+                        <i id="recording-status-icon" class="fas fa-microphone-alt text-4xl text-slate-300"></i>
+                        <p id="recording-status-text" class="font-medium">準備錄音...</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-8">
+                        <button id="start-recording-btn" class="col-span-2 py-4 bg-red-500 text-white rounded-2xl text-xl font-bold hover:bg-red-600 shadow-lg shadow-red-200 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-circle"></i> 開始錄音
+                        </button>
+                        <button id="stop-recording-btn" class="py-4 bg-slate-700 text-white rounded-2xl text-lg font-bold hover:bg-slate-800 transition flex items-center justify-center gap-2" disabled>
+                            <i class="fas fa-square"></i> 停止
+                        </button>
+                        <button id="play-recording-btn" class="py-4 bg-blue-500 text-white rounded-2xl text-lg font-bold hover:bg-blue-600 transition flex items-center justify-center gap-2" disabled>
+                            <i class="fas fa-play"></i> 試聽
+                        </button>
+                    </div>
+                    <button id="reset-recording-btn" class="w-full py-2 text-slate-400 hover:text-slate-600 font-medium mb-4 transition" disabled>
+                        <i class="fas fa-rotate-left mr-1"></i> 重新錄製
+                    </button>
+                    <audio id="audio-preview" controls class="w-full mb-6 hidden"></audio>
+                    <button id="submit-recording-btn" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fas fa-paper-plane mr-2"></i> 送出錄音
+                    </button>
                 </div>
-                <div class="flex flex-wrap justify-center gap-4 mb-6">
-                    <button id="start-recording-btn" class="btn btn-green !w-40 !h-16 flex items-center justify-center text-lg">
-                        <i class="fas fa-play mr-2"></i> 開始錄音 ▶️
-                    </button>
-                    <button id="stop-recording-btn" class="btn btn-red !w-40 !h-16 flex items-center justify-center text-lg" disabled>
-                        <i class="fas fa-stop mr-2"></i> 停止錄音 ⏹️
-                    </button>
-                    <button id="play-recording-btn" class="btn btn-primary !w-40 !h-16 flex items-center justify-center text-lg" disabled>
-                        <i class="fas fa-volume-up mr-2"></i> 試聽 🔊
-                    </button>
-                    <button id="reset-recording-btn" class="btn btn-orange !w-40 !h-10 flex items-center justify-center text-lg" disabled>
-                        <i class="fas fa-redo mr-2"></i> 重錄 🔄
-                    </button>
-                </div>
-                <audio id="audio-preview" controls class="w-full max-w-md mb-6 hidden"></audio>
-                <button id="submit-recording-btn" class="btn btn-primary mt-4 max-w-sm mx-auto" disabled>
-                    <i class="fas fa-paper-plane mr-2"></i> 送出錄音 ✉️
-                </button>
             </div>
-            <div id="interaction-reading-comprehension" class="hidden text-center p-4">
-                <h3 class="text-2xl font-bold text-center mb-4">閱讀測驗</h3>
-
-                <!-- 閱讀文本顯示 -->
-                <div class="max-w-4xl mx-auto mb-6">
-                    <div id="reading-text-display" class="bg-gray-50 p-6 rounded-lg border text-left text-base leading-relaxed whitespace-pre-wrap"></div>
+            <div id="interaction-reading-comprehension" class="hidden flex flex-col" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #f8fafc; overflow: hidden; z-index: 50; padding: 1.5rem 0;">
+                <!-- 標題與送出按鈕 -->
+                <div class="flex items-center justify-center mb-4 relative flex-shrink-0 px-6">
+                    <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <span class="bg-rose-100 text-rose-600 p-1.5 rounded-lg text-xl"><i class="fas fa-book-open"></i></span> 閱讀測驗
+                    </h3>
+                    <button id="submit-reading-btn" class="absolute right-6 px-6 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg transition flex items-center">
+                        送出 <i class="fas fa-paper-plane ml-2"></i>
+                    </button>
                 </div>
 
-                <!-- 題目顯示 -->
-                <div id="reading-questions-container" class="max-w-4xl mx-auto space-y-6">
-                    <!-- 題目將動態生成在這裡 -->
-                </div>
+                <!-- 左右二欄佈局 -->
+                <div class="flex flex-col lg:flex-row gap-6 mx-auto flex-1 w-[96%] min-h-0 pb-4">
+                    <!-- 左欄：閱讀文本 -->
+                    <div class="w-full lg:w-1/2 flex flex-col min-h-0">
+                        <div class="bg-white rounded-2xl shadow-md border border-slate-200 p-6 flex flex-col h-full">
+                            <div class="flex items-center justify-between mb-4 flex-shrink-0">
+                                <h4 class="text-lg font-bold text-slate-700">
+                                    <i class="fas fa-align-left text-slate-400 mr-2"></i>文章內容
+                                </h4>
+                                <!-- 螢光筆工具列 -->
+                                <div class="flex gap-2 items-center bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                                    <button class="highlighter-btn w-8 h-8 rounded-lg border border-slate-200" data-color="yellow" style="background-color: #fef08a;" title="黃色螢光筆"></button>
+                                    <button class="highlighter-btn w-8 h-8 rounded-lg border border-slate-200" data-color="green" style="background-color: #86efac;" title="綠色螢光筆"></button>
+                                    <button class="highlighter-btn w-8 h-8 rounded-lg border border-slate-200" data-color="pink" style="background-color: #fda4af;" title="粉色螢光筆"></button>
+                                    <button class="highlighter-btn w-8 h-8 rounded-lg border border-slate-200" data-color="blue" style="background-color: #93c5fd;" title="藍色螢光筆"></button>
+                                    <div class="w-px h-6 bg-slate-300 mx-1"></div>
+                                    <button id="reading-eraser-btn" class="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-100" title="橡皮擦">
+                                        <i class="fas fa-eraser"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div style="position: relative; flex: 1; min-height: 0; overflow-x: hidden;" class="bg-orange-50/50 rounded-xl border border-orange-100">
+                                <div id="reading-text-display" class="p-6 text-left text-base leading-loose whitespace-pre-wrap overflow-y-auto h-full text-slate-800" style="overflow-x: hidden; width: 100%;"></div>
+                                <canvas id="reading-highlight-canvas" style="position: absolute; top: 0; left: 0; pointer-events: none; border-radius: 0.75rem;"></canvas>
+                            </div>
+                        </div>
+                    </div>
 
-                <button id="submit-reading-btn" class="btn btn-primary mt-6 max-w-sm mx-auto">送出答案 ✉️</button>
+                    <!-- 右欄：題目 -->
+                    <div class="w-full lg:w-1/2 flex flex-col min-h-0">
+                        <div class="bg-white rounded-2xl shadow-md border border-slate-200 p-6 flex flex-col h-full">
+                            <h4 class="text-lg font-bold text-slate-700 mb-4 flex-shrink-0 border-b border-slate-100 pb-3">
+                                <i class="fas fa-clipboard-question text-slate-400 mr-2"></i>作答區
+                            </h4>
+                            <div id="reading-questions-container" class="space-y-6 overflow-y-auto flex-1 pr-2" style="min-height: 0; overflow-x: hidden; width: 100%;">
+                                <!-- 題目將動態生成在這裡 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div id="interaction-quick-answer" class="hidden text-center flex flex-col items-center justify-center h-full min-h-screen p-4 relative">
-                <h3 class="text-2xl font-bold text-center mb-6">搶答題</h3>
-                <p id="quick-answer-status-text" class="text-lg text-gray-600 mb-6">等待搶答開始...</p>
+                <h3 class="text-3xl font-bold text-slate-800 mb-8 flex items-center gap-3">
+                    <span class="bg-amber-100 text-amber-600 p-2 rounded-lg"><i class="fas fa-bolt"></i></span> 搶答題
+                </h3>
+                <p id="quick-answer-status-text" class="text-xl text-slate-500 mb-8 font-medium bg-white px-6 py-2 rounded-full shadow-sm">等待搶答開始...</p>
                 <div id="quick-answer-button-container" class="absolute inset-0 pointer-events-none">
                     <!-- 搶答按鈕將會動態生成在這裡 -->
                 </div>
-                <div id="quick-answer-result" class="hidden">
-                    <h2 class="text-4xl font-bold text-green-600 mb-4">🎉 搶答成功！</h2>
-                    <p class="text-xl text-gray-700">你是第一個點到按鈕的學生！</p>
+                <div id="quick-answer-result" class="hidden animate-fade-in-up">
+                    <div class="bg-green-100 text-green-700 p-10 rounded-full w-80 h-80 flex flex-col items-center justify-center shadow-2xl border-8 border-green-200 mx-auto">
+                        <i class="fas fa-trophy text-6xl mb-4"></i>
+                        <h2 class="text-3xl font-bold mb-2">搶答成功！</h2>
+                        <p class="text-lg opacity-90">你是第一名！</p>
+                    </div>
                 </div>
-                <div id="quick-answer-locked" class="hidden">
-                    <h2 class="text-4xl font-bold text-red-600 mb-4">⏰ 搶答結束</h2>
-                    <p class="text-xl text-gray-700">其他同學已經搶答成功了！</p>
+                <div id="quick-answer-locked" class="hidden animate-fade-in-up">
+                    <div class="bg-slate-100 text-slate-500 p-10 rounded-full w-64 h-64 flex flex-col items-center justify-center border-8 border-slate-200 mx-auto">
+                        <i class="fas fa-lock text-5xl mb-4"></i>
+                        <h2 class="text-2xl font-bold mb-2">搶答結束</h2>
+                        <p class="text-sm opacity-80">下次再加油！</p>
+                    </div>
                 </div>
             </div>
-            <div id="interaction-sequencing" class="hidden text-center">
-                <h3 class="text-2xl font-bold text-center mb-2">排序題</h3>
-                <p id="sequencing-question-text" class="text-lg text-gray-700 mb-6"></p>
-                <div class="sequencing-container">
-                    <div id="sequencing-items-container" class="mb-6">
+            <div id="interaction-sequencing" class="hidden text-center w-full max-w-3xl mx-auto pt-10 px-4">
+                <h3 class="text-3xl font-bold text-slate-800 mb-4 flex items-center justify-center gap-3">
+                    <span class="bg-cyan-100 text-cyan-600 p-2 rounded-lg"><i class="fas fa-sort-numeric-down"></i></span> 排序題
+                </h3>
+                <p id="sequencing-question-text" class="text-lg text-slate-600 mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-100 inline-block"></p>
+                <div class="sequencing-container space-y-2">
+                    <div id="sequencing-items-container" class="mb-8">
                         <!-- 排序項目將動態生成在這裡 -->
                     </div>
-                    <button id="submit-sequencing-btn" class="btn btn-primary max-w-sm mx-auto">送出答案 ✉️</button>
+                    <button id="submit-sequencing-btn" class="btn bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl font-bold shadow-lg shadow-cyan-200 py-3 max-w-xs mx-auto block">送出答案 <i class="fas fa-check ml-2"></i></button>
                 </div>
             </div>
-            <div id="interaction-matching" class="hidden text-center">
-                <h3 class="text-2xl font-bold text-center mb-2">配對題</h3>
-                <p id="matching-question-text" class="text-lg text-gray-700 mb-6"></p>
-                <div class="matching-container">
+            <div id="interaction-matching" class="hidden text-center w-full max-w-5xl mx-auto pt-10 px-4">
+                <h3 class="text-3xl font-bold text-slate-800 mb-4 flex items-center justify-center gap-3">
+                    <span class="bg-fuchsia-100 text-fuchsia-600 p-2 rounded-lg"><i class="fas fa-right-left"></i></span> 配對題
+                </h3>
+                <p id="matching-question-text" class="text-lg text-slate-600 mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-100 inline-block"></p>
+                <div class="matching-container bg-white p-6 rounded-3xl shadow-lg border border-slate-100">
                     <svg id="matching-svg-canvas"></svg>
                     <div class="matching-column" id="matching-column-a" style="z-index: 2;">
                         <!-- A項目列表 -->
@@ -1473,52 +1791,56 @@
                         <!-- B項目列表 -->
                     </div>
                 </div>
-                <button id="submit-matching-btn" class="btn btn-primary max-w-sm mx-auto mt-6">送出答案 ✉️</button>
+                <button id="submit-matching-btn" class="btn bg-gradient-to-r from-fuchsia-500 to-purple-600 hover:from-fuchsia-600 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-fuchsia-200 py-3 max-w-xs mx-auto mt-8 block">送出答案 <i class="fas fa-check ml-2"></i></button>
             </div>
 
             <div id="interaction-quick-poll" class="hidden text-center flex flex-col items-center justify-center h-full min-h-screen p-4">
-                <h3 class="text-2xl font-bold text-center mb-4">快速投票</h3>
-                <p id="quick-poll-question-display" class="text-xl text-gray-800 mb-8 font-medium px-4"></p>
+                <h3 class="text-3xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+                    <span class="bg-lime-100 text-lime-600 p-2 rounded-lg"><i class="fas fa-square-poll-vertical"></i></span> 快速投票
+                </h3>
+                <p id="quick-poll-question-display" class="text-xl text-slate-600 mb-10 font-medium px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 max-w-3xl"></p>
 
                 <!-- 投票選項容器 -->
-                <div id="quick-poll-options-container" class="w-full max-w-2xl">
+                <div id="quick-poll-options-container" class="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- 選項按鈕將會動態生成在這裡 -->
                 </div>
 
                 <!-- 已投票狀態 -->
-                <div id="quick-poll-voted-status" class="hidden mt-8">
-                    <div class="bg-green-100 border-2 border-green-500 rounded-lg p-6">
-                        <i class="fas fa-check-circle text-green-600 text-5xl mb-3"></i>
-                        <h4 class="text-2xl font-bold text-green-700 mb-2">投票成功！</h4>
-                        <p class="text-gray-700">感謝您的參與</p>
+                <div id="quick-poll-voted-status" class="hidden mt-10 animate-fade-in-up">
+                    <div class="bg-white border-2 border-green-100 rounded-3xl p-8 shadow-xl text-center max-w-sm">
+                        <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-slate-800 mb-2">投票成功！</h4>
+                        <p class="text-slate-500">感謝您的參與</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="student-peer-review-view" class="hidden">
-            <div class="flex flex-col h-full min-h-screen">
-                <div class="flex-shrink-0 mb-6">
-                    <h2 class="text-3xl font-bold text-gray-800 text-center mb-4">作品觀摩與投票</h2>
-                    <p class="text-lg text-gray-600 text-center mb-6">點擊愛心投票，再點擊可取消！最多可投 <span class="font-bold text-red-600">3</span> 個不同作品</p>
-                    <div class="text-center mb-4">
-                        <span class="inline-block bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium">
-                            已投票：<span id="current-vote-count">0</span> / 3
-                        </span>
-                    </div>
+        <div id="student-peer-review-view" class="hidden w-full h-full min-h-screen flex flex-col">
+            <div class="flex-shrink-0 mb-6 pt-10 px-6">
+                <h2 class="text-3xl font-bold text-slate-800 text-center mb-4 flex items-center justify-center gap-3">
+                    <span class="bg-teal-100 text-teal-600 p-2 rounded-lg"><i class="fas fa-heart"></i></span> 作品觀摩與投票
+                </h2>
+                <p class="text-lg text-slate-500 text-center mb-6">點擊愛心投票，再點擊可取消！</p>
+                <div class="text-center mb-4">
+                    <span class="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-2 rounded-full text-base font-bold shadow-sm">
+                        已投票：<span id="current-vote-count" class="text-rose-500 text-xl">0</span> <span class="text-slate-400">/</span> 3
+                    </span>
                 </div>
-                
-                <div id="peer-review-works-container" class="flex-1 bg-gray-100 p-4 rounded-lg overflow-y-auto">
-                    <div id="peer-review-works-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <p class="text-gray-500 text-center col-span-full">載入作品中...</p>
-                    </div>
+            </div>
+            
+            <div id="peer-review-works-container" class="flex-1 bg-slate-100 p-6 rounded-t-3xl overflow-y-auto shadow-inner">
+                <div id="peer-review-works-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto pb-20">
+                    <p class="text-slate-400 text-center col-span-full py-20">載入作品中...</p>
                 </div>
-                
-                <div class="flex-shrink-0 mt-4 text-center">
-                    <button id="exit-peer-review-btn" class="btn btn-gray !w-auto text-base h-11 px-6 py-2">
-                        <i class="fas fa-arrow-left mr-2"></i> 返回等待
-                    </button>
-                </div>
+            </div>
+            
+            <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-30">
+                <button id="exit-peer-review-btn" class="px-8 py-3 bg-slate-800 text-white rounded-full font-bold hover:bg-slate-900 shadow-lg hover:shadow-xl transition flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i> 返回等待
+                </button>
             </div>
         </div>
 
@@ -1650,6 +1972,28 @@ appId: &quot;...&quot;"></textarea>
             </div>
             <div class="settings-button-group">
                 <button id="save-ai-settings-btn" class="btn btn-primary">儲存設定 💾</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Error Modal -->
+    <div id="api-error-modal" class="magnified-image-modal hidden">
+        <div class="magnified-image-modal-content" style="max-width: 600px;">
+            <button id="api-error-modal-close-btn" class="magnified-image-modal-close">×</button>
+            <h4 class="text-2xl font-bold mb-4 text-red-600">⚠️ API 錯誤</h4>
+            <div class="space-y-4">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h5 class="font-bold text-lg mb-2 text-gray-800">錯誤原因：</h5>
+                    <p id="api-error-message" class="text-gray-700 leading-relaxed"></p>
+                </div>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h5 class="font-bold text-lg mb-2 text-gray-800">💡 解決方法：</h5>
+                    <ul id="api-error-solutions" class="list-disc list-inside text-gray-700 space-y-1">
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="api-error-modal-ok-btn" class="btn btn-primary px-6 py-2">我知道了</button>
             </div>
         </div>
     </div>
@@ -2292,7 +2636,7 @@ appId: &quot;...&quot;"></textarea>
 
     <script type="module">
         // Import Firebase SDK functions.
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { initializeApp, getApps, getApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; // Added signOut
         import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, getDoc, getDocs, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -2474,6 +2818,11 @@ appId: &quot;...&quot;"></textarea>
                 interactionUIs.url_dispatch.style.cssText = ''; // Reset container styles
              }
 
+             // Disable pull-to-refresh prevention when leaving reading comprehension mode
+             if (mode !== 'reading_comprehension') {
+                disablePullToRefreshPrevention();
+             }
+
              if (interactionUIs[mode]) {
                 interactionUIs[mode].classList.remove('hidden');
                 resetStudentUIState(mode, isResumingFromPause); // Pass the flag
@@ -2647,6 +2996,8 @@ appId: &quot;...&quot;"></textarea>
                         submitReadingBtn.classList.remove('btn-gray');
                         submitReadingBtn.classList.add('btn-primary');
                     }
+                    // Disable pull-to-refresh on iOS/iPadOS
+                    enablePullToRefreshPrevention();
                     break;
                 case 'quick_poll':
                     // Reset quick poll state
@@ -2746,9 +3097,40 @@ appId: &quot;...&quot;"></textarea>
         }
 
         /**
-         * Question Bank Management Functions
+         * Question Bank Management Functions (Classroom-specific)
          */
+        function getQuestionBankKey() {
+            return classroomCode ? `questionBanks_${classroomCode}` : 'questionBanks_default';
+        }
+
+        function loadQuestionBanksFromStorage() {
+            if (!classroomCode) return;
+            const key = getQuestionBankKey();
+            const stored = localStorage.getItem(key);
+            if (stored) {
+                try {
+                    questionBanks = JSON.parse(stored);
+                } catch (e) {
+                    console.error('載入題庫失敗:', e);
+                    questionBanks = [];
+                }
+            } else {
+                questionBanks = [];
+            }
+        }
+
+        function saveQuestionBanksToStorage() {
+            if (!classroomCode) return;
+            const key = getQuestionBankKey();
+            try {
+                localStorage.setItem(key, JSON.stringify(questionBanks));
+            } catch (e) {
+                console.error('儲存題庫失敗:', e);
+            }
+        }
+
         function updateQuestionBankList() {
+            loadQuestionBanksFromStorage(); // Load from storage first
             const list = document.getElementById('question-bank-list');
             if (questionBanks.length === 0) {
                 list.innerHTML = '<div class="text-gray-500 text-sm italic text-center">目前沒有儲存的題庫</div>';
@@ -2824,6 +3206,8 @@ appId: &quot;...&quot;"></textarea>
                 return;
             }
 
+            loadQuestionBanksFromStorage(); // Load latest from storage
+
             // Check if bank with same name exists
             const existingIndex = questionBanks.findIndex(bank => bank.name === name);
             if (existingIndex !== -1) {
@@ -2836,6 +3220,7 @@ appId: &quot;...&quot;"></textarea>
                 questionBanks.push({ name: name, content: content });
             }
 
+            saveQuestionBanksToStorage(); // Save to storage
             updateQuestionBankList();
             showMessage(`題庫「${name}」儲存成功`, 'success');
             nameInput.value = ''; // Clear name input
@@ -2850,10 +3235,12 @@ appId: &quot;...&quot;"></textarea>
         }
 
         function deleteQuestionBank(index) {
+            loadQuestionBanksFromStorage(); // Load latest from storage
             if (index >= 0 && index < questionBanks.length) {
                 const bankName = questionBanks[index].name;
                 if (confirm(`確定要刪除題庫「${bankName}」嗎？`)) {
                     questionBanks.splice(index, 1);
+                    saveQuestionBanksToStorage(); // Save to storage
                     updateQuestionBankList();
                     showMessage(`題庫「${bankName}」已刪除`, 'success');
                 }
@@ -2865,18 +3252,77 @@ appId: &quot;...&quot;"></textarea>
         window.deleteQuestionBank = deleteQuestionBank;
 
         function clearAllQuestionBanks() {
-            questionBanks = [];
-            updateQuestionBankList();
+            if (!classroomCode) {
+                console.warn('無法清除題庫：教室代碼為空');
+                return;
+            }
+
+            // Store current classroom code for logging
+            const currentClassroom = classroomCode;
+
+            // Clear question banks from localStorage for current classroom only
+            const mcKey = `questionBanks_${currentClassroom}`;
+            localStorage.removeItem(mcKey);
+            console.log(`已刪除選擇題題庫: ${mcKey}`);
+
+            // Clear sequencing banks
+            const seqKey = `sequencingBanks_${currentClassroom}`;
+            localStorage.removeItem(seqKey);
+            console.log(`已刪除排序題題庫: ${seqKey}`);
+
+            // Clear matching banks
+            const matchKey = `matchingBanks_${currentClassroom}`;
+            localStorage.removeItem(matchKey);
+            console.log(`已刪除配對題題庫: ${matchKey}`);
 
             // Clear reading comprehension question banks
+            const readingKey = `readingQuestionBanks_${currentClassroom}`;
+            localStorage.removeItem(readingKey);
+            console.log(`已刪除閱讀測驗題庫: ${readingKey}`);
+
+            // Clear memory arrays (these will be reset when entering another classroom)
+            questionBanks = [];
+            sequencingQuestionBanks = [];
+            matchingQuestionBanks = [];
             readingQuestionBanks = [];
-            localStorage.removeItem('readingQuestionBanks');
-            updateReadingBankList();
+
+            console.log(`✓ 已完全清除教室 ${currentClassroom} 的所有題庫，其他教室題庫不受影響`);
         }
 
         // ==================== Sequencing Question Bank Functions ====================
 
+        function getSequencingBankKey() {
+            return classroomCode ? `sequencingBanks_${classroomCode}` : 'sequencingBanks_default';
+        }
+
+        function loadSequencingBanksFromStorage() {
+            if (!classroomCode) return;
+            const key = getSequencingBankKey();
+            const stored = localStorage.getItem(key);
+            if (stored) {
+                try {
+                    sequencingQuestionBanks = JSON.parse(stored);
+                } catch (e) {
+                    console.error('載入排序題庫失敗:', e);
+                    sequencingQuestionBanks = [];
+                }
+            } else {
+                sequencingQuestionBanks = [];
+            }
+        }
+
+        function saveSequencingBanksToStorage() {
+            if (!classroomCode) return;
+            const key = getSequencingBankKey();
+            try {
+                localStorage.setItem(key, JSON.stringify(sequencingQuestionBanks));
+            } catch (e) {
+                console.error('儲存排序題庫失敗:', e);
+            }
+        }
+
         function updateSequencingBankList() {
+            loadSequencingBanksFromStorage(); // Load from storage first
             const list = document.getElementById('seq-bank-list');
             if (sequencingQuestionBanks.length === 0) {
                 list.innerHTML = '<div class="text-gray-500 text-sm italic text-center">目前沒有儲存的題庫</div>';
@@ -2921,6 +3367,7 @@ appId: &quot;...&quot;"></textarea>
                 const question = '排序題';
                 const items = lines.join('\n');
 
+                loadSequencingBanksFromStorage(); // Load latest from storage
                 const existingIndex = sequencingQuestionBanks.findIndex(bank => bank.name === fileName);
                 if (existingIndex !== -1) {
                     if (confirm(`題庫「${fileName}」已存在，是否要覆蓋？`)) {
@@ -2932,6 +3379,7 @@ appId: &quot;...&quot;"></textarea>
                     sequencingQuestionBanks.push({ name: fileName, question: question, items: items });
                 }
 
+                saveSequencingBanksToStorage(); // Save to storage
                 updateSequencingBankList();
                 showMessage(`題庫「${fileName}」載入成功`, 'success');
                 fileInput.value = '';
@@ -2962,6 +3410,7 @@ appId: &quot;...&quot;"></textarea>
                 return;
             }
 
+            loadSequencingBanksFromStorage(); // Load latest from storage
             const existingIndex = sequencingQuestionBanks.findIndex(bank => bank.name === name);
             if (existingIndex !== -1) {
                 if (confirm(`題庫「${name}」已存在，是否要覆蓋？`)) {
@@ -2973,6 +3422,7 @@ appId: &quot;...&quot;"></textarea>
                 sequencingQuestionBanks.push({ name: name, question: question, items: items });
             }
 
+            saveSequencingBanksToStorage(); // Save to storage
             updateSequencingBankList();
             showMessage(`題庫「${name}」儲存成功`, 'success');
             nameInput.value = '';
@@ -2987,10 +3437,12 @@ appId: &quot;...&quot;"></textarea>
         }
 
         function deleteSequencingBank(index) {
+            loadSequencingBanksFromStorage(); // Load latest from storage
             if (index >= 0 && index < sequencingQuestionBanks.length) {
                 const bankName = sequencingQuestionBanks[index].name;
                 if (confirm(`確定要刪除題庫「${bankName}」嗎？`)) {
                     sequencingQuestionBanks.splice(index, 1);
+                    saveSequencingBanksToStorage(); // Save to storage
                     updateSequencingBankList();
                     showMessage(`題庫「${bankName}」已刪除`, 'success');
                 }
@@ -2999,7 +3451,38 @@ appId: &quot;...&quot;"></textarea>
 
         // ==================== Matching Question Bank Functions ====================
 
+        function getMatchingBankKey() {
+            return classroomCode ? `matchingBanks_${classroomCode}` : 'matchingBanks_default';
+        }
+
+        function loadMatchingBanksFromStorage() {
+            if (!classroomCode) return;
+            const key = getMatchingBankKey();
+            const stored = localStorage.getItem(key);
+            if (stored) {
+                try {
+                    matchingQuestionBanks = JSON.parse(stored);
+                } catch (e) {
+                    console.error('載入配對題庫失敗:', e);
+                    matchingQuestionBanks = [];
+                }
+            } else {
+                matchingQuestionBanks = [];
+            }
+        }
+
+        function saveMatchingBanksToStorage() {
+            if (!classroomCode) return;
+            const key = getMatchingBankKey();
+            try {
+                localStorage.setItem(key, JSON.stringify(matchingQuestionBanks));
+            } catch (e) {
+                console.error('儲存配對題庫失敗:', e);
+            }
+        }
+
         function updateMatchingBankList() {
+            loadMatchingBanksFromStorage(); // Load from storage first
             const list = document.getElementById('match-bank-list');
             if (matchingQuestionBanks.length === 0) {
                 list.innerHTML = '<div class="text-gray-500 text-sm italic text-center">目前沒有儲存的題庫</div>';
@@ -3044,6 +3527,7 @@ appId: &quot;...&quot;"></textarea>
                 const question = '配對題';
                 const pairs = lines.join('\n');
 
+                loadMatchingBanksFromStorage(); // Load latest from storage
                 const existingIndex = matchingQuestionBanks.findIndex(bank => bank.name === fileName);
                 if (existingIndex !== -1) {
                     if (confirm(`題庫「${fileName}」已存在，是否要覆蓋？`)) {
@@ -3055,6 +3539,7 @@ appId: &quot;...&quot;"></textarea>
                     matchingQuestionBanks.push({ name: fileName, question: question, pairs: pairs });
                 }
 
+                saveMatchingBanksToStorage(); // Save to storage
                 updateMatchingBankList();
                 showMessage(`題庫「${fileName}」載入成功`, 'success');
                 fileInput.value = '';
@@ -3085,6 +3570,7 @@ appId: &quot;...&quot;"></textarea>
                 return;
             }
 
+            loadMatchingBanksFromStorage(); // Load latest from storage
             const existingIndex = matchingQuestionBanks.findIndex(bank => bank.name === name);
             if (existingIndex !== -1) {
                 if (confirm(`題庫「${name}」已存在，是否要覆蓋？`)) {
@@ -3096,6 +3582,7 @@ appId: &quot;...&quot;"></textarea>
                 matchingQuestionBanks.push({ name: name, question: question, pairs: pairs });
             }
 
+            saveMatchingBanksToStorage(); // Save to storage
             updateMatchingBankList();
             showMessage(`題庫「${name}」儲存成功`, 'success');
             nameInput.value = '';
@@ -3110,10 +3597,12 @@ appId: &quot;...&quot;"></textarea>
         }
 
         function deleteMatchingBank(index) {
+            loadMatchingBanksFromStorage(); // Load latest from storage
             if (index >= 0 && index < matchingQuestionBanks.length) {
                 const bankName = matchingQuestionBanks[index].name;
                 if (confirm(`確定要刪除題庫「${bankName}」嗎？`)) {
                     matchingQuestionBanks.splice(index, 1);
+                    saveMatchingBanksToStorage(); // Save to storage
                     updateMatchingBankList();
                     showMessage(`題庫「${bankName}」已刪除`, 'success');
                 }
@@ -5156,6 +5645,99 @@ appId: &quot;...&quot;"></textarea>
             aiSettingsModal.classList.add('hidden');
         }
 
+        /**
+         * Show API error modal with detailed error message in Chinese
+         */
+        function showAPIErrorModal(error, response = null) {
+            const errorMessageEl = document.getElementById('api-error-message');
+            const errorSolutionsEl = document.getElementById('api-error-solutions');
+
+            let errorMessage = '';
+            let solutions = [];
+
+            // Determine error type and provide Chinese explanation
+            if (response && !response.ok) {
+                const statusCode = response.status;
+
+                if (statusCode === 400) {
+                    errorMessage = 'API 請求格式錯誤或 API Key 無效';
+                    solutions = [
+                        '請檢查您的 API Key 是否正確',
+                        '請確認 API Key 是否已啟用',
+                        '請到右上角齒輪圖示重新設定 API Key'
+                    ];
+                } else if (statusCode === 401) {
+                    errorMessage = 'API Key 驗證失敗，無法存取 API 服務';
+                    solutions = [
+                        '您的 API Key 可能無效或已過期',
+                        '請到 Google AI Studio 確認 API Key 狀態',
+                        '請到右上角齒輪圖示重新設定正確的 API Key'
+                    ];
+                } else if (statusCode === 403) {
+                    errorMessage = 'API Key 沒有權限使用此服務';
+                    solutions = [
+                        '請確認 API Key 是否有 Gemini API 的使用權限',
+                        '請檢查 API Key 是否已超過使用額度',
+                        '請到 Google AI Studio 檢查專案設定'
+                    ];
+                } else if (statusCode === 429) {
+                    errorMessage = 'API 請求次數超過限制';
+                    solutions = [
+                        '您已超過 API 的使用次數限制',
+                        '請稍後再試，或升級您的 API 方案',
+                        '如使用免費方案，請等待配額重置（通常為每分鐘重置）'
+                    ];
+                } else if (statusCode === 500 || statusCode === 503) {
+                    errorMessage = 'API 服務暫時無法使用';
+                    solutions = [
+                        'Google API 伺服器目前發生問題',
+                        '請稍後再試',
+                        '如持續發生問題，請查看 Google API 服務狀態'
+                    ];
+                } else {
+                    errorMessage = `API 請求失敗（錯誤代碼：${statusCode}）`;
+                    solutions = [
+                        '請檢查網路連線是否正常',
+                        '請確認 API Key 設定是否正確',
+                        '請稍後再試'
+                    ];
+                }
+            } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                errorMessage = '無法連接到 API 服務';
+                solutions = [
+                    '請檢查您的網路連線是否正常',
+                    '請確認防火牆或網路設定是否阻擋了 API 請求',
+                    '請稍後再試'
+                ];
+            } else if (error.message.includes('API Key')) {
+                errorMessage = 'API Key 設定有誤';
+                solutions = [
+                    '請到右上角齒輪圖示設定 API Key',
+                    '請確認 API Key 格式正確（無多餘空格或字元）',
+                    '請到 Google AI Studio 取得有效的 API Key'
+                ];
+            } else {
+                errorMessage = error.message || 'AI 生成過程發生未知錯誤';
+                solutions = [
+                    '請檢查網路連線',
+                    '請確認 API Key 設定正確',
+                    '請稍後再試',
+                    '如持續發生問題，請聯繫技術支援'
+                ];
+            }
+
+            // Update modal content
+            errorMessageEl.textContent = errorMessage;
+            errorSolutionsEl.innerHTML = solutions.map(solution => `<li>${solution}</li>`).join('');
+
+            // Show modal
+            document.getElementById('api-error-modal').classList.remove('hidden');
+        }
+
+        function hideAPIErrorModal() {
+            document.getElementById('api-error-modal').classList.add('hidden');
+        }
+
         function saveAISettings() {
             aiSettings.aiSource = aiSourceSelect.value;
             aiSettings.geminiApiKey = geminiApiKeyInput.value.trim();
@@ -5539,6 +6121,12 @@ appId: &quot;...&quot;"></textarea>
             isResponsePaused = false;
             currentMultipleChoiceQuestions = null;
 
+            // Clear question bank arrays from memory
+            questionBanks = [];
+            sequencingQuestionBanks = [];
+            matchingQuestionBanks = [];
+            readingQuestionBanks = [];
+
             // Clear UI
             document.getElementById('student-responses-container').innerHTML = '<p class="text-gray-500 text-center col-span-full">正在等待學生作答...</p>';
             document.getElementById('active-student-count').textContent = '0';
@@ -5825,6 +6413,12 @@ appId: &quot;...&quot;"></textarea>
                     updateTeacherPauseButtonUI(); // Update button UI
                     currentMultipleChoiceQuestions = null; // Ensure this is cleared on new class
 
+                    // Load question banks for this classroom
+                    loadQuestionBanksFromStorage();
+                    loadSequencingBanksFromStorage();
+                    loadMatchingBanksFromStorage();
+                    loadReadingBanksFromStorage();
+
                     listenToClassroomPresence(); // Ensure presence listener is active
                     showView('teacherMenu');
                     document.getElementById('teacher-classroom-code-input').value = ''; // Clear input
@@ -5898,6 +6492,10 @@ appId: &quot;...&quot;"></textarea>
             // Open Multiple Choice Settings from B menu
             document.getElementById('open-multiple-choice-settings-btn').addEventListener('click', () => {
                 document.getElementById('choice-sequencing-matching-menu-modal').classList.add('hidden');
+
+                // Update question bank list for current classroom
+                updateQuestionBankList();
+
                 // Initialize modal state based on current customMultipleChoiceQuestions
                 const mcQuestionTypeNone = document.querySelector('input[name="mcQuestionType"][value="none"]');
                 const mcQuestionTypeCustom = document.querySelector('input[name="mcQuestionType"][value="custom"]');
@@ -5925,12 +6523,20 @@ appId: &quot;...&quot;"></textarea>
             // Open Sequencing Settings from B menu
             document.getElementById('open-sequencing-settings-btn').addEventListener('click', () => {
                 document.getElementById('choice-sequencing-matching-menu-modal').classList.add('hidden');
+
+                // Update sequencing bank list for current classroom
+                updateSequencingBankList();
+
                 document.getElementById('sequencing-settings-modal').classList.remove('hidden');
             });
 
             // Open Matching Settings from B menu
             document.getElementById('open-matching-settings-btn').addEventListener('click', () => {
                 document.getElementById('choice-sequencing-matching-menu-modal').classList.add('hidden');
+
+                // Update matching bank list for current classroom
+                updateMatchingBankList();
+
                 document.getElementById('matching-settings-modal').classList.remove('hidden');
             });
 
@@ -6019,6 +6625,9 @@ appId: &quot;...&quot;"></textarea>
                 
                 await setInteractionMode('waiting');
                 lastSelectedStudentCard = null;
+
+                // Disable pull-to-refresh prevention when ending interaction
+                disablePullToRefreshPrevention();
 
                 // Clear sequencing and matching input fields
                 document.getElementById('sequencing-items-textarea').value = '';
@@ -6360,7 +6969,13 @@ appId: &quot;...&quot;"></textarea>
                     };
                     const apiKey = (aiSettings.aiSource === 'gemini-custom' && aiSettings.geminiApiKey) ? aiSettings.geminiApiKey : "";
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+
+                    if (!response.ok) {
+                        aiLoadingSpinner.classList.add('hidden');
+                        showAPIErrorModal(new Error(`API request failed: ${response.status}`), response);
+                        return;
+                    }
+
                     const result = await response.json();
                     aiLoadingSpinner.classList.add('hidden');
                     const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -6377,7 +6992,7 @@ appId: &quot;...&quot;"></textarea>
                 } catch (error) {
                     console.error("AI 文字分析失敗:", error);
                     aiLoadingSpinner.classList.add('hidden');
-                    aiSummaryResultList.innerHTML = '<li class="error-message">AI 分析失敗，請檢查 API Key 或網路連線。</li>';
+                    showAPIErrorModal(error);
                 }
             });
             document.getElementById('ai-summary-modal-close-btn').addEventListener('click', () => document.getElementById('ai-summary-modal').classList.add('hidden'));
@@ -6385,6 +7000,10 @@ appId: &quot;...&quot;"></textarea>
             aiSettingsModalCloseBtn.addEventListener('click', hideAISettingsModal);
             saveAiSettingsBtn.addEventListener('click', saveAISettings);
             aiSourceSelect.addEventListener('change', (e) => geminiApiKeyGroup.classList.toggle('hidden', e.target.value !== 'gemini-custom'));
+
+            // API Error Modal listeners
+            document.getElementById('api-error-modal-close-btn').addEventListener('click', hideAPIErrorModal);
+            document.getElementById('api-error-modal-ok-btn').addEventListener('click', hideAPIErrorModal);
 
             // New: URL/HTML Dispatch Settings Modal listeners.
             document.getElementById('url-dispatch-settings-btn').addEventListener('click', showUrlDispatchSettingsModal);
@@ -6676,21 +7295,22 @@ appId: &quot;...&quot;"></textarea>
                 題目,正確答案(1-4),選項1,選項2,選項3,選項4
                 請勿包含題號、任何多餘的說明文字或程式碼區塊標記。`;
 
+                let apiResponse = null;
                 try {
                     const payload = {
                         contents: [{ role: "user", parts: [{ text: prompt }] }],
                         generationConfig: { temperature: 0.7 } // Adjust temperature for creativity
                     };
                     const apiKey = aiSettings.geminiApiKey;
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
-                    if (!response.ok) {
-                        throw new Error(`AI API request failed with status ${response.status}`);
+                    if (!apiResponse.ok) {
+                        throw new Error(`AI API request failed with status ${apiResponse.status}`);
                     }
 
-                    const result = await response.json();
+                    const result = await apiResponse.json();
                     const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    
+
                     if (generatedText) {
                         // Append to existing content, adding a newline if needed
                         const existingText = customMcQuestionsTextarea.value.trim();
@@ -6702,7 +7322,7 @@ appId: &quot;...&quot;"></textarea>
 
                 } catch (error) {
                     console.error("AI 題目生成失敗:", error);
-                    showMessage('AI 題目生成失敗，請檢查 API Key 或網路連線。', 'error');
+                    showAPIErrorModal(error, apiResponse);
                 } finally {
                     // Hide loading state
                     aiGenerateMcBtn.disabled = false;
@@ -6746,19 +7366,20 @@ appId: &quot;...&quot;"></textarea>
 請按正確順序列出，每個項目一行，不要有題號或任何標記。
 只需提供項目內容，不要包含說明文字或程式碼區塊標記。`;
 
+                let apiResponse = null;
                 try {
                     const payload = {
                         contents: [{ role: "user", parts: [{ text: prompt }] }],
                         generationConfig: { temperature: 0.7 }
                     };
                     const apiKey = aiSettings.geminiApiKey;
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
-                    if (!response.ok) {
-                        throw new Error(`AI API request failed with status ${response.status}`);
+                    if (!apiResponse.ok) {
+                        throw new Error(`AI API request failed with status ${apiResponse.status}`);
                     }
 
-                    const result = await response.json();
+                    const result = await apiResponse.json();
                     const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
                     if (generatedText) {
@@ -6771,7 +7392,7 @@ appId: &quot;...&quot;"></textarea>
 
                 } catch (error) {
                     console.error("AI 排序題生成失敗:", error);
-                    showMessage('AI 排序題生成失敗，請檢查 API Key 或網路連線。', 'error');
+                    showAPIErrorModal(error, apiResponse);
                 } finally {
                     // Hide loading state
                     aiGenerateSeqBtn.disabled = false;
@@ -6816,19 +7437,20 @@ appId: &quot;...&quot;"></textarea>
 不要有題號、說明文字或程式碼區塊標記。
 直接提供配對內容，每行一組。`;
 
+                let apiResponse = null;
                 try {
                     const payload = {
                         contents: [{ role: "user", parts: [{ text: prompt }] }],
                         generationConfig: { temperature: 0.7 }
                     };
                     const apiKey = aiSettings.geminiApiKey;
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
-                    if (!response.ok) {
-                        throw new Error(`AI API request failed with status ${response.status}`);
+                    if (!apiResponse.ok) {
+                        throw new Error(`AI API request failed with status ${apiResponse.status}`);
                     }
 
-                    const result = await response.json();
+                    const result = await apiResponse.json();
                     const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
                     if (generatedText) {
@@ -6841,7 +7463,7 @@ appId: &quot;...&quot;"></textarea>
 
                 } catch (error) {
                     console.error("AI 配對題生成失敗:", error);
-                    showMessage('AI 配對題生成失敗，請檢查 API Key 或網路連線。', 'error');
+                    showAPIErrorModal(error, apiResponse);
                 } finally {
                     // Hide loading state
                     aiGenerateMatchBtn.disabled = false;
@@ -7602,7 +8224,7 @@ appId: &quot;...&quot;"></textarea>
         /**
          * Parse and apply Firebase configuration string
          */
-        function applyFirebaseConfig(rawConfigString, suppressMessage = false) {
+        async function applyFirebaseConfig(rawConfigString, suppressMessage = false) {
             try {
                 // Step 1: Clean up the input string
                 let cleanedConfigString = rawConfigString.trim();
@@ -7633,7 +8255,7 @@ appId: &quot;...&quot;"></textarea>
                 }
 
                 // Initialize Firebase with the new config
-                initializeFirebase();
+                await initializeFirebase();
 
                 if (!suppressMessage) {
                     showFirebaseCopyMessage("設定已成功套用！", false);
@@ -7652,8 +8274,14 @@ appId: &quot;...&quot;"></textarea>
         /**
          * Initialize Firebase with the current configuration
          */
-        function initializeFirebase() {
+        async function initializeFirebase() {
             try {
+                if (getApps().length > 0) {
+                    const existingApp = getApp();
+                    console.log("Existing Firebase app found. Deleting it to re-initialize...");
+                    await deleteApp(existingApp);
+                }
+
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
@@ -7666,8 +8294,9 @@ appId: &quot;...&quot;"></textarea>
 
         /**
          * Setup Firebase configuration from various sources
+         * 優先順序：localStorage > URL 參數 > firebase-config.js > 原始碼硬編碼
          */
-        function setupFirebaseConfig() {
+        async function setupFirebaseConfig() {
             const urlParams = new URLSearchParams(window.location.search);
             const configParam = urlParams.get('config');
             let rawConfigString = localStorage.getItem('firebaseConfig');
@@ -7689,7 +8318,7 @@ appId: &quot;...&quot;"></textarea>
             if (!rawConfigString && typeof __firebase_config !== 'undefined') {
                 try {
                     firebaseConfig = JSON.parse(__firebase_config);
-                    initializeFirebase();
+                    await initializeFirebase();
                     isFirebaseConfigApplied = true;
                     console.log("已從外部 firebase-config.js 自動載入並套用 Firebase 設定。");
                     return true;
@@ -7701,7 +8330,7 @@ appId: &quot;...&quot;"></textarea>
             // Apply config if found
             if (rawConfigString) {
                 try {
-                    const applySuccess = applyFirebaseConfig(rawConfigString, true);
+                    const applySuccess = await applyFirebaseConfig(rawConfigString, true);
                     if (applySuccess) {
                         isFirebaseConfigApplied = true;
                         console.log(`已從 ${configSource} 自動載入並套用 Firebase 設定。`);
@@ -7718,16 +8347,42 @@ appId: &quot;...&quot;"></textarea>
                 }
             }
 
-            // No config found - return 'demo' to skip Firebase initialization
-            console.warn("未找到 Firebase 設定，請使用右上角按鈕進行設定");
+            // ============================================================================
+            // 【Firebase 設定區】- 備用設定（優先權最低）
+            // ============================================================================
+            // 使用方式：將下方六行 "demo" 直接取代為您的 Firebase 設定值
+            //
+            // 1. 前往 Firebase Console > 專案設定 > 一般設定
+            // 2. 在「您的應用程式」區塊找到 firebaseConfig
+            // 3. 複製對應的值，取代下方的 "demo"
+            //
+            // 優先順序：localStorage > URL 參數 > firebase-config.js > 此設定
+            // 如果上述來源都沒有設定，才會使用這裡的值
+            // ============================================================================
             firebaseConfig = {
                 apiKey: "demo",
                 authDomain: "demo",
                 projectId: "demo",
                 storageBucket: "demo",
                 messagingSenderId: "demo",
-                appId: "demo"
+                appId: "demoV4"
             };
+            // ============================================================================
+
+            // Check if this is a valid config (not demo or starts with demo)
+            if (firebaseConfig.apiKey !== "demo" && !firebaseConfig.apiKey.startsWith("demo")) {
+                try {
+                    await initializeFirebase();
+                    isFirebaseConfigApplied = true;
+                    console.log("已從原始碼中的備用設定自動載入並套用 Firebase 設定。");
+                    return true;
+                } catch (error) {
+                    console.error("原始碼中的 Firebase 設定初始化失敗:", error);
+                }
+            }
+
+            // No valid config found - return 'demo' to skip Firebase initialization
+            console.warn("未找到 Firebase 設定，請使用右上角按鈕進行設定");
             // Don't initialize Firebase with demo config, just return 'demo'
             return 'demo';
         }
@@ -7756,7 +8411,7 @@ appId: &quot;...&quot;"></textarea>
         /**
          * Handle apply settings button click
          */
-        function handleApplyFirebaseSettings() {
+        async function handleApplyFirebaseSettings() {
             const configContent = document.getElementById('firebase-config-textarea').value.trim();
             if (!configContent) {
                 showFirebaseCopyMessage("請先貼上設定內容", true);
@@ -7765,7 +8420,7 @@ appId: &quot;...&quot;"></textarea>
 
             localStorage.setItem('firebaseConfigDraft', configContent);
 
-            const applySuccess = applyFirebaseConfig(configContent);
+            const applySuccess = await applyFirebaseConfig(configContent);
 
             if (applySuccess) {
                 isFirebaseConfigApplied = true;
@@ -8100,7 +8755,7 @@ appId: &quot;...&quot;"></textarea>
             }
 
             // Setup Firebase configuration first
-            const configResult = setupFirebaseConfig();
+            const configResult = await setupFirebaseConfig();
             if (!configResult) {
                 console.error("Firebase 設定失敗");
                 return;
@@ -8170,6 +8825,12 @@ appId: &quot;...&quot;"></textarea>
                             customMultipleChoiceQuestions = [];
                         }
                         updateTeacherPauseButtonUI(); // Update button UI based on fetched state
+
+                        // Load question banks for this classroom
+                        loadQuestionBanksFromStorage();
+                        loadSequencingBanksFromStorage();
+                        loadMatchingBanksFromStorage();
+                        loadReadingBanksFromStorage();
 
                         listenToClassroomPresence(); // Ensure presence listener is established here and remains active
                         showView('teacherMenu');
@@ -8951,6 +9612,9 @@ appId: &quot;...&quot;"></textarea>
          * Show reading comprehension settings modal
          */
         function showReadingComprehensionModal() {
+            // Update reading bank list for current classroom
+            updateReadingBankList();
+
             document.getElementById('reading-comprehension-settings-modal').classList.remove('hidden');
             // Populate with existing data if any
             document.getElementById('reading-text-textarea').value = readingComprehensionData.text || '';
@@ -9057,9 +9721,28 @@ appId: &quot;...&quot;"></textarea>
                 readingComprehensionData = readingData;
             }
 
-            textDisplay.textContent = readingData.text;
+            // Process text for highlighting - wrap in spans
+            textDisplay.innerHTML = '';
+            const text = readingData.text;
+            // Split text by sentences (keep whitespace structure)
+            const lines = text.split('\n');
+            lines.forEach((line, lineIndex) => {
+                if (line.trim()) {
+                    const lineSpan = document.createElement('span');
+                    lineSpan.textContent = line;
+                    lineSpan.dataset.lineIndex = lineIndex;
+                    textDisplay.appendChild(lineSpan);
+                }
+                if (lineIndex < lines.length - 1) {
+                    textDisplay.appendChild(document.createTextNode('\n'));
+                }
+            });
+
             questionsContainer.innerHTML = '';
             console.log('[displayReadingComprehensionForStudent] Set text:', readingData.text);
+
+            // Initialize highlighter after text is displayed
+            initializeHighlighter();
 
             // Determine which answers to restore
             let answersToRestore = [];
@@ -9100,20 +9783,35 @@ appId: &quot;...&quot;"></textarea>
 
             readingData.questions.forEach((q, index) => {
                 const questionDiv = document.createElement('div');
-                questionDiv.className = 'bg-white p-4 rounded-lg border';
+                questionDiv.className = 'question-card';
 
                 // Get answer for this question (if exists)
                 const selectedAnswer = answersToRestore[index] || 0;
 
+                // Difficulty badge
+                const levelBadge = q.level ? `<span class="inline-block px-2 py-1 text-xs font-semibold rounded-full ${
+                    q.level === '直接理解' ? 'bg-green-100 text-green-800' :
+                    q.level === '推論理解' ? 'bg-yellow-100 text-yellow-800' :
+                    q.level === '詮釋整合' ? 'bg-orange-100 text-orange-800' :
+                    'bg-purple-100 text-purple-800'
+                }">${q.level}</span>` : '';
+
                 questionDiv.innerHTML = `
-                    <p class="font-bold text-lg mb-3">${index + 1}. ${q.question}</p>
-                    <div class="space-y-2">
+                    <div class="flex items-start justify-between mb-3">
+                        <p class="font-bold text-lg text-gray-800 flex-1">
+                            <span class="inline-block w-8 h-8 bg-green-500 text-white rounded-full text-center leading-8 mr-2">${index + 1}</span>
+                            ${q.question}
+                        </p>
+                        ${levelBadge}
+                    </div>
+                    <div class="space-y-2 ml-10">
                         ${q.options.map((opt, i) => {
                             const isChecked = selectedAnswer === (i + 1) ? 'checked' : '';
+                            const optionLabels = ['A', 'B', 'C', 'D'];
                             return `
-                            <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                                <input type="radio" name="reading_q${index}" value="${i + 1}" class="mr-3" ${isChecked} data-question-index="${index}">
-                                <span>${i + 1}. ${opt}</span>
+                            <label class="flex items-center p-3 hover:bg-green-50 rounded-lg cursor-pointer transition-all duration-200 border-2 ${isChecked ? 'border-green-400 bg-green-50' : 'border-transparent'}">
+                                <input type="radio" name="reading_q${index}" value="${i + 1}" class="mr-3 w-4 h-4 text-green-600" ${isChecked} data-question-index="${index}">
+                                <span class="font-medium text-gray-700"><span class="font-bold text-green-600">${optionLabels[i]}.</span> ${opt}</span>
                             </label>
                         `}).join('')}
                     </div>
@@ -9129,8 +9827,560 @@ appId: &quot;...&quot;"></textarea>
                     const selectedValue = parseInt(e.target.value);
                     currentReadingAnswers[questionIndex] = selectedValue;
                     console.log('[Reading] Answer updated:', questionIndex, '=', selectedValue);
+
+                    // Update visual styles for selected option
+                    const allLabels = questionsContainer.querySelectorAll(`input[name="reading_q${questionIndex}"]`).forEach(input => {
+                        const label = input.closest('label');
+                        if (input.checked) {
+                            label.classList.add('border-green-400', 'bg-green-50');
+                            label.classList.remove('border-transparent');
+                        } else {
+                            label.classList.remove('border-green-400', 'bg-green-50');
+                            label.classList.add('border-transparent');
+                        }
+                    });
                 });
             });
+        }
+
+        /**
+         * Prevent pull-to-refresh on iOS/iPadOS devices
+         */
+        let pullToRefreshHandler = null;
+        let touchStartY = 0;
+
+        function enablePullToRefreshPrevention() {
+            // Remove existing handlers if any
+            if (pullToRefreshHandler) {
+                document.removeEventListener('touchstart', pullToRefreshHandler.start);
+                document.removeEventListener('touchmove', pullToRefreshHandler.move, { passive: false });
+            }
+
+            // Track touch start position
+            const handleTouchStart = function(e) {
+                touchStartY = e.touches[0].clientY;
+            };
+
+            // Prevent pull-to-refresh only when pulling down from non-scrollable area
+            const handleTouchMove = function(e) {
+                const readingContainer = document.getElementById('interaction-reading-comprehension');
+                if (!readingContainer || readingContainer.classList.contains('hidden')) {
+                    return;
+                }
+
+                const touchY = e.touches[0].clientY;
+                const touchDelta = touchY - touchStartY;
+
+                // Get the target element that was touched
+                const target = e.target;
+
+                // Find if the target is inside a scrollable container
+                let scrollableParent = null;
+                let element = target;
+
+                while (element && element !== readingContainer) {
+                    const overflowY = window.getComputedStyle(element).overflowY;
+                    if (overflowY === 'auto' || overflowY === 'scroll') {
+                        scrollableParent = element;
+                        break;
+                    }
+                    element = element.parentElement;
+                }
+
+                // If inside a scrollable container
+                if (scrollableParent) {
+                    const isAtTop = scrollableParent.scrollTop === 0;
+                    const isPullingDown = touchDelta > 0;
+
+                    // Only prevent if at the top AND pulling down
+                    if (isAtTop && isPullingDown) {
+                        e.preventDefault();
+                    }
+                } else {
+                    // Not in a scrollable container, prevent pull-to-refresh
+                    if (touchDelta > 0) {
+                        e.preventDefault();
+                    }
+                }
+            };
+
+            pullToRefreshHandler = {
+                start: handleTouchStart,
+                move: handleTouchMove
+            };
+
+            // Add event listeners
+            document.addEventListener('touchstart', pullToRefreshHandler.start, { passive: true });
+            document.addEventListener('touchmove', pullToRefreshHandler.move, { passive: false });
+            console.log('[Pull-to-Refresh] Prevention enabled');
+        }
+
+        function disablePullToRefreshPrevention() {
+            if (pullToRefreshHandler) {
+                document.removeEventListener('touchstart', pullToRefreshHandler.start);
+                document.removeEventListener('touchmove', pullToRefreshHandler.move, { passive: false });
+                pullToRefreshHandler = null;
+                console.log('[Pull-to-Refresh] Prevention disabled');
+            }
+        }
+
+        /**
+         * Initialize highlighter functionality for reading text - Drawing mode
+         */
+        let currentHighlighterColor = null;
+        let isEraserMode = false;
+        let highlightLines = []; // Store all highlight lines {color, points: [{x, y, lineY}]}
+        let highlightCanvas = null;
+        let highlightCtx = null;
+        let isHighlighting = false;
+        let currentHighlightPath = [];
+        let textLines = []; // Store text line positions
+
+        function initializeHighlighter() {
+            console.log('[Highlighter] Initializing drawing mode...');
+            const textDisplay = document.getElementById('reading-text-display');
+            highlightCanvas = document.getElementById('reading-highlight-canvas');
+
+            if (!textDisplay || !highlightCanvas) {
+                console.error('[Highlighter] Text display or canvas not found');
+                return;
+            }
+
+            highlightCtx = highlightCanvas.getContext('2d');
+
+            // Reset state
+            currentHighlighterColor = null;
+            isEraserMode = false;
+            highlightLines = [];
+            textLines = [];
+
+            // Setup canvas size
+            resizeCanvas();
+
+            // Setup highlighter buttons
+            const highlighterBtns = document.querySelectorAll('.highlighter-btn');
+            const eraserBtn = document.getElementById('reading-eraser-btn');
+
+            console.log('[Highlighter] Found buttons:', highlighterBtns.length, 'highlighters, eraser:', !!eraserBtn);
+
+            // Remove previous active states
+            highlighterBtns.forEach(btn => btn.classList.remove('active'));
+            if (eraserBtn) eraserBtn.classList.remove('active');
+
+            // Remove old event listeners by cloning buttons
+            highlighterBtns.forEach((btn, index) => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+            });
+
+            if (eraserBtn) {
+                const newEraserBtn = eraserBtn.cloneNode(true);
+                eraserBtn.parentNode.replaceChild(newEraserBtn, eraserBtn);
+            }
+
+            // Re-query buttons after cloning
+            const newHighlighterBtns = document.querySelectorAll('.highlighter-btn');
+            const newEraserBtn = document.getElementById('reading-eraser-btn');
+
+            // Highlighter button click handlers
+            newHighlighterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const color = btn.dataset.color;
+                    console.log('[Highlighter] Color button clicked:', color);
+
+                    currentHighlighterColor = color;
+                    isEraserMode = false;
+
+                    // Update button states
+                    newHighlighterBtns.forEach(b => b.classList.remove('active'));
+                    if (newEraserBtn) newEraserBtn.classList.remove('active');
+                    btn.classList.add('active');
+
+                    console.log('[Highlighter] Color activated:', color);
+                    highlightCanvas.style.pointerEvents = 'auto';
+                    highlightCanvas.style.cursor = 'crosshair';
+                });
+            });
+
+            // Eraser button click handler
+            if (newEraserBtn) {
+                newEraserBtn.addEventListener('click', () => {
+                    console.log('[Highlighter] Eraser button clicked');
+                    isEraserMode = true;
+                    currentHighlighterColor = null;
+
+                    // Update button states
+                    newHighlighterBtns.forEach(b => b.classList.remove('active'));
+                    newEraserBtn.classList.add('active');
+
+                    console.log('[Highlighter] Eraser mode activated');
+                    highlightCanvas.style.pointerEvents = 'auto';
+                    highlightCanvas.style.cursor = 'pointer';
+                });
+            }
+
+            // Detect text lines
+            detectTextLines();
+
+            // Setup drawing events
+            setupDrawingEvents();
+
+            console.log('[Highlighter] Initialization complete with drawing mode');
+        }
+
+        /**
+         * Resize canvas to match text display size
+         */
+        function resizeCanvas() {
+            const textDisplay = document.getElementById('reading-text-display');
+            if (!highlightCanvas || !textDisplay) return;
+
+            const rect = textDisplay.getBoundingClientRect();
+            highlightCanvas.width = rect.width;
+            highlightCanvas.height = rect.height;
+            highlightCanvas.style.width = rect.width + 'px';
+            highlightCanvas.style.height = rect.height + 'px';
+
+            console.log('[Highlighter] Canvas resized to:', highlightCanvas.width, 'x', highlightCanvas.height);
+
+            // Redraw all highlights after resize
+            drawHighlights();
+        }
+
+        /**
+         * Detect text line positions
+         */
+        function detectTextLines() {
+            const textDisplay = document.getElementById('reading-text-display');
+            if (!textDisplay) return;
+
+            textLines = [];
+            const range = document.createRange();
+            const textContent = textDisplay.textContent;
+
+            if (!textContent) return;
+
+            // Get all text nodes
+            const walker = document.createTreeWalker(
+                textDisplay,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+
+            const textNodes = [];
+            while (walker.nextNode()) {
+                if (walker.currentNode.textContent.trim()) {
+                    textNodes.push(walker.currentNode);
+                }
+            }
+
+            // Get line rectangles
+            const lineMap = new Map();
+            textNodes.forEach(node => {
+                range.selectNodeContents(node);
+                const rects = range.getClientRects();
+                Array.from(rects).forEach(rect => {
+                    const y = Math.round(rect.top);
+                    if (!lineMap.has(y)) {
+                        lineMap.set(y, {
+                            top: rect.top,
+                            bottom: rect.bottom,
+                            left: Math.min(rect.left, lineMap.get(y)?.left || Infinity),
+                            right: Math.max(rect.right, lineMap.get(y)?.right || 0),
+                            height: rect.height
+                        });
+                    } else {
+                        const line = lineMap.get(y);
+                        line.left = Math.min(line.left, rect.left);
+                        line.right = Math.max(line.right, rect.right);
+                    }
+                });
+            });
+
+            const textDisplayRect = textDisplay.getBoundingClientRect();
+            lineMap.forEach((line, y) => {
+                textLines.push({
+                    y: line.top + line.height / 2 - textDisplayRect.top,
+                    top: line.top - textDisplayRect.top,
+                    bottom: line.bottom - textDisplayRect.top,
+                    left: line.left - textDisplayRect.left,
+                    right: line.right - textDisplayRect.left,
+                    height: line.height
+                });
+            });
+
+            textLines.sort((a, b) => a.y - b.y);
+            console.log('[Highlighter] Detected', textLines.length, 'text lines');
+        }
+
+        /**
+         * Setup drawing events for mouse and touch
+         */
+        function setupDrawingEvents() {
+            if (!highlightCanvas) return;
+
+            // Mouse events
+            highlightCanvas.addEventListener('mousedown', handleDrawStart);
+            highlightCanvas.addEventListener('mousemove', handleDrawMove);
+            highlightCanvas.addEventListener('mouseup', handleDrawEnd);
+            highlightCanvas.addEventListener('mouseleave', handleDrawEnd);
+
+            // Touch events
+            highlightCanvas.addEventListener('touchstart', handleDrawStart);
+            highlightCanvas.addEventListener('touchmove', handleDrawMove);
+            highlightCanvas.addEventListener('touchend', handleDrawEnd);
+            highlightCanvas.addEventListener('touchcancel', handleDrawEnd);
+        }
+
+        /**
+         * Get coordinates from mouse or touch event
+         */
+        function getEventCoords(e) {
+            const rect = highlightCanvas.getBoundingClientRect();
+            let clientX, clientY;
+
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        /**
+         * Find nearest text line for a given y coordinate
+         */
+        function findNearestLine(y) {
+            if (textLines.length === 0) return null;
+
+            let nearest = textLines[0];
+            let minDist = Math.abs(y - textLines[0].y);
+
+            for (let i = 1; i < textLines.length; i++) {
+                const dist = Math.abs(y - textLines[i].y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = textLines[i];
+                }
+            }
+
+            return nearest;
+        }
+
+        /**
+         * Start drawing
+         */
+        function handleDrawStart(e) {
+            e.preventDefault();
+
+            if (isEraserMode) {
+                handleEraseClick(e);
+                return;
+            }
+
+            if (!currentHighlighterColor) return;
+
+            isHighlighting = true;
+            currentHighlightPath = [];
+
+            const coords = getEventCoords(e);
+            currentHighlightPath.push(coords);
+
+            console.log('[Highlighter] Drawing started at:', coords);
+        }
+
+        /**
+         * Drawing move
+         */
+        function handleDrawMove(e) {
+            if (!isHighlighting || !currentHighlighterColor) return;
+
+            e.preventDefault();
+
+            const coords = getEventCoords(e);
+            currentHighlightPath.push(coords);
+
+            // Draw preview
+            drawPreview();
+        }
+
+        /**
+         * End drawing
+         */
+        function handleDrawEnd(e) {
+            if (!isHighlighting) return;
+
+            e.preventDefault();
+            isHighlighting = false;
+
+            if (currentHighlightPath.length < 2) {
+                currentHighlightPath = [];
+                return;
+            }
+
+            // Process path to align to text lines
+            const alignedPath = alignPathToLines(currentHighlightPath);
+
+            if (alignedPath.length > 0) {
+                highlightLines.push({
+                    color: currentHighlighterColor,
+                    points: alignedPath,
+                    id: Date.now() + Math.random()
+                });
+            }
+
+            currentHighlightPath = [];
+            drawHighlights();
+
+            console.log('[Highlighter] Drawing complete, total lines:', highlightLines.length);
+        }
+
+        /**
+         * Draw preview while drawing
+         */
+        function drawPreview() {
+            if (!highlightCtx || currentHighlightPath.length < 2) return;
+
+            drawHighlights(); // Redraw existing highlights
+
+            // Draw current path preview
+            const colorMap = {
+                yellow: 'rgba(254, 240, 138, 0.6)',
+                green: 'rgba(134, 239, 172, 0.6)',
+                pink: 'rgba(253, 164, 175, 0.6)',
+                blue: 'rgba(147, 197, 253, 0.6)'
+            };
+
+            highlightCtx.strokeStyle = colorMap[currentHighlighterColor] || 'rgba(254, 240, 138, 0.6)';
+            highlightCtx.lineWidth = 20;
+            highlightCtx.lineCap = 'round';
+            highlightCtx.lineJoin = 'round';
+
+            highlightCtx.beginPath();
+            highlightCtx.moveTo(currentHighlightPath[0].x, currentHighlightPath[0].y);
+            for (let i = 1; i < currentHighlightPath.length; i++) {
+                highlightCtx.lineTo(currentHighlightPath[i].x, currentHighlightPath[i].y);
+            }
+            highlightCtx.stroke();
+        }
+
+        /**
+         * Align path to text lines
+         */
+        function alignPathToLines(path) {
+            if (path.length === 0 || textLines.length === 0) return [];
+
+            const aligned = [];
+            const lineHeight = 20; // Height of highlight line
+
+            // Group path points by nearest line
+            const lineGroups = new Map();
+
+            path.forEach(point => {
+                const nearestLine = findNearestLine(point.y);
+                if (nearestLine) {
+                    const lineKey = nearestLine.y;
+                    if (!lineGroups.has(lineKey)) {
+                        lineGroups.set(lineKey, {
+                            line: nearestLine,
+                            points: []
+                        });
+                    }
+                    lineGroups.get(lineKey).points.push(point);
+                }
+            });
+
+            // Create aligned segments for each line
+            lineGroups.forEach((group, lineKey) => {
+                if (group.points.length > 0) {
+                    const minX = Math.min(...group.points.map(p => p.x));
+                    const maxX = Math.max(...group.points.map(p => p.x));
+                    const y = group.line.y;
+
+                    aligned.push({
+                        x1: minX,
+                        x2: maxX,
+                        y: y,
+                        lineY: group.line.y
+                    });
+                }
+            });
+
+            return aligned;
+        }
+
+        /**
+         * Draw all highlights on canvas
+         */
+        function drawHighlights() {
+            if (!highlightCtx || !highlightCanvas) return;
+
+            // Clear canvas
+            highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+
+            const colorMap = {
+                yellow: 'rgba(254, 240, 138, 0.6)',
+                green: 'rgba(134, 239, 172, 0.6)',
+                pink: 'rgba(253, 164, 175, 0.6)',
+                blue: 'rgba(147, 197, 253, 0.6)'
+            };
+
+            const lineHeight = 20;
+
+            // Draw all highlight lines
+            highlightLines.forEach(line => {
+                highlightCtx.strokeStyle = colorMap[line.color] || 'rgba(254, 240, 138, 0.6)';
+                highlightCtx.lineWidth = lineHeight;
+                highlightCtx.lineCap = 'round';
+
+                line.points.forEach(segment => {
+                    highlightCtx.beginPath();
+                    highlightCtx.moveTo(segment.x1, segment.y);
+                    highlightCtx.lineTo(segment.x2, segment.y);
+                    highlightCtx.stroke();
+                });
+            });
+        }
+
+        /**
+         * Handle eraser click
+         */
+        function handleEraseClick(e) {
+            if (!isEraserMode) return;
+
+            const coords = getEventCoords(e);
+            console.log('[Highlighter] Erase click at:', coords);
+
+            // Find which highlight line was clicked
+            const clickRadius = 15;
+            let foundIndex = -1;
+
+            for (let i = highlightLines.length - 1; i >= 0; i--) {
+                const line = highlightLines[i];
+                for (const segment of line.points) {
+                    // Check if click is within the segment bounds
+                    if (coords.x >= segment.x1 - clickRadius &&
+                        coords.x <= segment.x2 + clickRadius &&
+                        Math.abs(coords.y - segment.y) <= clickRadius) {
+                        foundIndex = i;
+                        break;
+                    }
+                }
+                if (foundIndex >= 0) break;
+            }
+
+            if (foundIndex >= 0) {
+                highlightLines.splice(foundIndex, 1);
+                drawHighlights();
+                console.log('[Highlighter] Highlight line removed, remaining:', highlightLines.length);
+            }
         }
 
         /**
@@ -9327,6 +10577,45 @@ ${existingText}
         // === Reading Comprehension Question Bank Functions ===
 
         /**
+         * Get classroom-specific reading bank key
+         */
+        function getReadingBankKey() {
+            return classroomCode ? `readingQuestionBanks_${classroomCode}` : 'readingQuestionBanks_default';
+        }
+
+        /**
+         * Load reading question banks from localStorage for current classroom
+         */
+        function loadReadingBanksFromStorage() {
+            if (!classroomCode) return;
+            const key = getReadingBankKey();
+            const stored = localStorage.getItem(key);
+            if (stored) {
+                try {
+                    readingQuestionBanks = JSON.parse(stored);
+                } catch (e) {
+                    console.error('載入閱讀測驗題庫失敗:', e);
+                    readingQuestionBanks = [];
+                }
+            } else {
+                readingQuestionBanks = [];
+            }
+        }
+
+        /**
+         * Save reading question banks to localStorage for current classroom
+         */
+        function saveReadingBanksToStorage() {
+            if (!classroomCode) return;
+            const key = getReadingBankKey();
+            try {
+                localStorage.setItem(key, JSON.stringify(readingQuestionBanks));
+            } catch (e) {
+                console.error('儲存閱讀測驗題庫失敗:', e);
+            }
+        }
+
+        /**
          * Load text and questions from separate files
          */
         async function loadReadingFiles() {
@@ -9391,6 +10680,9 @@ ${existingText}
                 return;
             }
 
+            // Load from storage first to get current banks for this classroom
+            loadReadingBanksFromStorage();
+
             const bank = {
                 name: bankName,
                 text: textContent,
@@ -9409,7 +10701,7 @@ ${existingText}
                 readingQuestionBanks.push(bank);
             }
 
-            localStorage.setItem('readingQuestionBanks', JSON.stringify(readingQuestionBanks));
+            saveReadingBanksToStorage();
             updateReadingBankList();
             showMessage(`題庫「${bankName}」已儲存！`, 'success');
             nameInput.value = '';
@@ -9419,6 +10711,7 @@ ${existingText}
          * Update reading question bank list display
          */
         function updateReadingBankList() {
+            loadReadingBanksFromStorage(); // Load from storage first
             const listContainer = document.getElementById('reading-question-bank-list');
 
             if (readingQuestionBanks.length === 0) {
@@ -9454,11 +10747,12 @@ ${existingText}
          * Delete reading bank
          */
         function deleteReadingBank(index) {
+            loadReadingBanksFromStorage(); // Load from storage first
             if (index >= 0 && index < readingQuestionBanks.length) {
                 const bankName = readingQuestionBanks[index].name;
                 if (confirm(`確定要刪除題庫「${bankName}」嗎？`)) {
                     readingQuestionBanks.splice(index, 1);
-                    localStorage.setItem('readingQuestionBanks', JSON.stringify(readingQuestionBanks));
+                    saveReadingBanksToStorage();
                     updateReadingBankList();
                     showMessage(`題庫「${bankName}」已刪除`, 'success');
                 }
@@ -9469,16 +10763,8 @@ ${existingText}
         window.loadReadingBankToTextarea = loadReadingBankToTextarea;
         window.deleteReadingBank = deleteReadingBank;
 
-        // Load reading question banks from localStorage on init
-        const savedReadingBanks = localStorage.getItem('readingQuestionBanks');
-        if (savedReadingBanks) {
-            try {
-                readingQuestionBanks = JSON.parse(savedReadingBanks);
-                updateReadingBankList();
-            } catch (e) {
-                console.error('Failed to parse reading question banks:', e);
-            }
-        }
+        // Note: Reading question banks are loaded when teacher enters classroom
+        // (see loadReadingBanksFromStorage() call in teacher setup)
 
         // --- Start Application ---
         initialize();
