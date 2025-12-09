@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.7/build/d3.layout.cloud.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -483,6 +484,12 @@
             width: 1200px;
             justify-content: flex-start;
             align-items: stretch;
+        }
+
+        /* 查看題目模態框樣式 */
+        #view-questions-modal-content {
+            max-width: 60% !important;
+            width: 60%;
         }
         .magnified-image-modal-content img {
             max-width: 100%;
@@ -1346,7 +1353,7 @@
                 <div class="text-center mt-8">
                     <p class="text-xs text-slate-400">App ID: <span id="app-id-display"></span> &nbsp;&bull;&nbsp; User ID: <span id="user-id-display"></span></p>
                     <div class="mt-2 text-slate-400 text-sm">
-                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4</a>
+                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.2</a>
                     </div>
                     <div class="mt-4 text-slate-500 text-xs max-w-2xl mx-auto px-4">
                         <p class="mb-2">
@@ -1434,6 +1441,12 @@
                     </div>
                     <span class="font-bold text-slate-700 text-lg">文字題</span>
                 </button>
+                <button data-mode="word_cloud" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-pink-100 text-pink-600 flex items-center justify-center text-2xl group-hover:bg-pink-600 group-hover:text-white transition">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">即時文字雲</span>
+                </button>
                 <button data-mode="drawing" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
                     <div class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl group-hover:bg-purple-600 group-hover:text-white transition">
                         <i class="fas fa-palette"></i>
@@ -1457,6 +1470,12 @@
                         <i class="fas fa-book-open-reader"></i>
                     </div>
                     <span class="font-bold text-slate-700 text-lg">閱讀測驗</span>
+                </button>
+                <button data-mode="sticky_note" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl group-hover:bg-amber-600 group-hover:text-white transition">
+                        <i class="fas fa-note-sticky"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">便利貼牆</span>
                 </button>
                 <button data-mode="quick_answer" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
                     <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl group-hover:bg-amber-600 group-hover:text-white transition">
@@ -1528,6 +1547,92 @@
                      <button id="end-interaction-btn" class="monitor-btn bg-slate-200 text-slate-600 hover:bg-slate-300 font-bold border border-slate-300">結束 🛑</button>
                  </div>
             </div>
+
+            <!-- Word Cloud Display Area (Teacher) -->
+            <div id="word-cloud-display" class="hidden bg-white p-6 rounded-2xl border border-slate-200 h-[calc(100vh-180px)] overflow-hidden flex flex-col items-center justify-center">
+                <div class="w-full h-full flex items-center justify-center">
+                    <svg id="word-cloud-svg" class="w-full h-full"></svg>
+                </div>
+                <p class="text-sm text-slate-500 mt-4">即時文字雲 - 學生輸入的關鍵字將即時顯示</p>
+            </div>
+
+            <!-- Sticky Note Wall Display Area (Teacher) -->
+            <div id="sticky-note-wall" class="hidden bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-200 h-[calc(100vh-180px)] overflow-hidden relative">
+                <!-- Toolbar -->
+                <div class="absolute top-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-b border-slate-200 p-3 flex items-center gap-4 z-[2000]">
+                    <!-- Scale Controls -->
+                    <div class="flex items-center gap-2 border-r border-slate-300 pr-4">
+                        <span class="text-sm font-medium text-slate-600">縮放：</span>
+                        <button id="sticky-zoom-out" class="w-8 h-8 rounded bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-700" title="縮小">
+                            <i class="fas fa-minus text-xs"></i>
+                        </button>
+                        <span id="sticky-zoom-level" class="text-sm font-bold text-slate-700 w-12 text-center">100%</span>
+                        <button id="sticky-zoom-in" class="w-8 h-8 rounded bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-700" title="放大">
+                            <i class="fas fa-plus text-xs"></i>
+                        </button>
+                        <button id="sticky-zoom-reset" class="px-3 h-8 rounded bg-slate-200 hover:bg-slate-300 text-xs font-medium text-slate-700" title="重置">
+                            重置
+                        </button>
+                    </div>
+
+                    <!-- Mode Toggle -->
+                    <div class="flex items-center gap-2 border-r border-slate-300 pr-4">
+                        <span class="text-sm font-medium text-slate-600">模式：</span>
+                        <button id="mouse-mode" class="w-8 h-8 rounded bg-blue-500 text-white flex items-center justify-center" title="滑鼠模式">
+                            <i class="fas fa-mouse-pointer text-xs"></i>
+                        </button>
+                        <button id="draw-mode" class="w-8 h-8 rounded bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-700" title="繪圖模式">
+                            <i class="fas fa-pencil-alt text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Drawing Tools -->
+                    <div class="flex items-center gap-2 opacity-50" id="drawing-tools">
+                        <span class="text-sm font-medium text-slate-600">畫筆：</span>
+                        <button id="pen-tool" class="w-8 h-8 rounded bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-700" title="畫筆">
+                            <i class="fas fa-pen text-xs"></i>
+                        </button>
+                        <button id="eraser-tool" class="w-8 h-8 rounded bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-700" title="橡皮擦">
+                            <i class="fas fa-eraser text-xs"></i>
+                        </button>
+
+                        <!-- Color Picker -->
+                        <div class="flex gap-1">
+                            <button class="pen-color w-6 h-6 rounded border-2 border-slate-400" style="background: #000000" data-color="#000000" title="黑色"></button>
+                            <button class="pen-color w-6 h-6 rounded border border-slate-300" style="background: #ef4444" data-color="#ef4444" title="紅色"></button>
+                            <button class="pen-color w-6 h-6 rounded border border-slate-300" style="background: #3b82f6" data-color="#3b82f6" title="藍色"></button>
+                            <button class="pen-color w-6 h-6 rounded border border-slate-300" style="background: #10b981" data-color="#10b981" title="綠色"></button>
+                            <button class="pen-color w-6 h-6 rounded border border-slate-300" style="background: #f59e0b" data-color="#f59e0b" title="橙色"></button>
+                        </div>
+
+                        <!-- Line Width -->
+                        <select id="pen-width" class="h-8 px-2 rounded border border-slate-300 text-xs">
+                            <option value="2">細</option>
+                            <option value="4" selected>中</option>
+                            <option value="8">粗</option>
+                        </select>
+
+                        <button id="clear-canvas" class="px-3 h-8 rounded bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium" title="清除畫記">
+                            清除畫記
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div id="sticky-wall-scroll" class="absolute top-16 left-0 right-0 bottom-0 overflow-hidden">
+                    <!-- Drawing Canvas Layer (Top) -->
+                    <canvas id="sticky-drawing-canvas" class="absolute top-0 left-0 pointer-events-none w-full h-full" style="z-index: 1000;"></canvas>
+
+                    <!-- Sticky Notes Container (Bottom) -->
+                    <div id="sticky-notes-container" class="absolute top-0 left-0 w-full h-full" style="z-index: 1;">
+                        <div class="text-center py-10 text-slate-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" id="sticky-note-placeholder">
+                            <i class="fas fa-note-sticky text-4xl mb-4"></i>
+                            <p class="text-lg font-medium">等待學生送出便利貼...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="student-responses-container" class="bg-slate-100 p-6 rounded-2xl border border-slate-200 h-[calc(100vh-180px)] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 content-start">
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-slate-400">
                     <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
@@ -1617,6 +1722,63 @@
                  </div>
                  <button id="submit-text-btn" class="btn bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 mt-6 max-w-xs mx-auto rounded-xl shadow-lg shadow-orange-200 text-lg py-3">送出回答 <i class="fas fa-paper-plane ml-2"></i></button>
             </div>
+
+            <!-- Word Cloud Interaction (Student) -->
+            <div id="interaction-word-cloud" class="hidden text-center w-full max-w-3xl mx-auto pt-10 px-4">
+                 <h3 class="text-3xl font-bold text-slate-800 mb-8 flex items-center justify-center gap-3">
+                    <span class="bg-pink-100 text-pink-600 p-2 rounded-lg"><i class="fas fa-cloud"></i></span> 即時文字雲
+                 </h3>
+                 <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-100">
+                    <p class="text-slate-600 mb-4 text-sm">請輸入關鍵字或短語（限制10字以內）</p>
+                    <input type="text" id="word-cloud-input" maxlength="10" class="w-full p-4 border border-slate-200 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-pink-500 bg-slate-50 focus:bg-white transition text-center font-bold" placeholder="例如：創意、快樂、學習..." />
+                    <p class="text-xs text-slate-400 mt-2">已輸入：<span id="word-cloud-char-count">0</span>/10 字</p>
+                 </div>
+                 <button id="submit-word-cloud-btn" class="btn bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 mt-6 max-w-xs mx-auto rounded-xl shadow-lg shadow-pink-200 text-lg py-3">送出 <i class="fas fa-paper-plane ml-2"></i></button>
+            </div>
+
+            <!-- Sticky Note Interaction (Student) -->
+            <div id="interaction-sticky-note" class="hidden text-center w-full max-w-3xl mx-auto pt-10 px-4">
+                 <h3 class="text-3xl font-bold text-slate-800 mb-8 flex items-center justify-center gap-3">
+                    <span class="bg-amber-100 text-amber-600 p-2 rounded-lg"><i class="fas fa-note-sticky"></i></span> 便利貼牆
+                 </h3>
+
+                 <!-- Tab selection -->
+                 <div class="flex gap-2 mb-6 justify-center">
+                    <button id="sticky-text-tab" class="px-6 py-3 rounded-xl font-bold bg-amber-500 text-white transition">
+                        <i class="fas fa-font mr-2"></i>文字
+                    </button>
+                    <button id="sticky-image-tab" class="px-6 py-3 rounded-xl font-bold bg-slate-200 text-slate-600 transition hover:bg-slate-300">
+                        <i class="fas fa-image mr-2"></i>圖片
+                    </button>
+                 </div>
+
+                 <!-- Text input section -->
+                 <div id="sticky-text-section" class="bg-white p-6 rounded-2xl shadow-lg border border-slate-100">
+                    <p class="text-slate-600 mb-4 text-sm">請輸入您的想法或意見（單行文字）</p>
+                    <input type="text" id="sticky-note-text" class="w-full p-4 border border-slate-200 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white transition" placeholder="在此輸入文字...">
+                    <p class="text-xs text-slate-400 mt-2">已輸入：<span id="sticky-text-char-count">0</span> 字</p>
+                 </div>
+
+                 <!-- Image upload section -->
+                 <div id="sticky-image-section" class="hidden bg-white p-6 rounded-2xl shadow-lg border border-slate-100">
+                    <p class="text-slate-600 mb-4 text-sm">請選擇或拍攝圖片</p>
+                    <div class="flex flex-col gap-3">
+                        <input type="file" id="sticky-image-input" accept="image/*" class="hidden">
+                        <button id="sticky-select-image-btn" class="btn bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-xl shadow-lg">
+                            <i class="fas fa-folder-open mr-2"></i>選擇圖片
+                        </button>
+                        <button id="sticky-capture-image-btn" class="btn bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-xl shadow-lg">
+                            <i class="fas fa-camera mr-2"></i>拍攝照片
+                        </button>
+                    </div>
+                    <div id="sticky-image-preview" class="hidden mt-4">
+                        <img id="sticky-preview-img" class="max-w-full max-h-64 mx-auto rounded-xl border-2 border-amber-300">
+                    </div>
+                 </div>
+
+                 <button id="submit-sticky-note-btn" class="btn bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 mt-6 max-w-xs mx-auto rounded-xl shadow-lg shadow-amber-200 text-lg py-3">送出便利貼 <i class="fas fa-paper-plane ml-2"></i></button>
+            </div>
+
             <div id="interaction-drawing" class="hidden text-center flex flex-col h-full min-h-screen bg-slate-100">
                 <div class="bg-white shadow-sm p-3 flex flex-wrap justify-between items-center gap-3 z-10 sticky top-0">
                     <div class="flex items-center gap-2">
@@ -1976,6 +2138,17 @@ appId: &quot;...&quot;"></textarea>
                 <div id="gemini-api-key-group" class="hidden">
                     <label for="gemini-api-key-input">Gemini API Key:</label>
                     <input type="password" id="gemini-api-key-input" placeholder="請貼上您的 Gemini API Key" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+                    <div style="margin-top: 15px;">
+                        <label for="ai-model-select">選擇 AI 模型:</label>
+                        <select id="ai-model-select" class="drawing-tool-select">
+                            <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (目前使用)</option>
+                            <option value="gemma-3-27b-it">Gemma 3 27B IT</option>
+                        </select>
+                        <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                            <i class="fas fa-info-circle"></i> 不同模型有不同的特性和效能，可依需求切換
+                        </p>
+                    </div>
                 </div>
             </div>
             <div class="settings-button-group">
@@ -2154,6 +2327,12 @@ appId: &quot;...&quot;"></textarea>
                                     <i id="ai-mc-btn-icon" class="fas fa-magic mr-2"></i>
                                     <span id="ai-mc-btn-text">AI 開始出題</span>
                                 </button>
+                                <div class="mt-2 flex items-center justify-center">
+                                    <span class="inline-flex items-center px-3 py-1 bg-purple-50 rounded-full text-xs font-medium text-purple-700">
+                                        <i class="fas fa-robot mr-1.5"></i>
+                                        <span id="ai-mc-model-name">使用模型: Gemini 2.5 Flash</span>
+                                    </span>
+                                </div>
                             </div>
                             <div id="ai-mc-loading-spinner" class="hidden flex items-center justify-center text-purple-600 pt-2">
                                 <i class="fas fa-spinner fa-spin mr-2"></i>
@@ -2269,6 +2448,12 @@ appId: &quot;...&quot;"></textarea>
                                 <i id="ai-seq-btn-icon" class="fas fa-magic mr-2"></i>
                                 <span id="ai-seq-btn-text">AI 開始出題</span>
                             </button>
+                            <div class="mt-2 flex items-center justify-center">
+                                <span class="inline-flex items-center px-3 py-1 bg-purple-50 rounded-full text-xs font-medium text-purple-700">
+                                    <i class="fas fa-robot mr-1.5"></i>
+                                    <span id="ai-seq-model-name">使用模型: Gemini 2.5 Flash</span>
+                                </span>
+                            </div>
                         </div>
                         <div id="ai-seq-loading-spinner" class="hidden flex items-center justify-center text-purple-600 pt-2">
                             <i class="fas fa-spinner fa-spin mr-2"></i>
@@ -2352,6 +2537,12 @@ appId: &quot;...&quot;"></textarea>
                                 <i id="ai-match-btn-icon" class="fas fa-magic mr-2"></i>
                                 <span id="ai-match-btn-text">AI 開始出題</span>
                             </button>
+                            <div class="mt-2 flex items-center justify-center">
+                                <span class="inline-flex items-center px-3 py-1 bg-purple-50 rounded-full text-xs font-medium text-purple-700">
+                                    <i class="fas fa-robot mr-1.5"></i>
+                                    <span id="ai-match-model-name">使用模型: Gemini 2.5 Flash</span>
+                                </span>
+                            </div>
                         </div>
                         <div id="ai-match-loading-spinner" class="hidden flex items-center justify-center text-purple-600 pt-2">
                             <i class="fas fa-spinner fa-spin mr-2"></i>
@@ -2437,6 +2628,14 @@ appId: &quot;...&quot;"></textarea>
 本文的主旨是?,A,友誼的重要,競爭的意義,學習的價值,家庭的溫暖
 故事發生的地點在哪裡?,3,學校,公園,圖書館,家裡"></textarea>
                             <p id="reading-questions-status" class="text-red-500 text-sm mt-2 hidden">格式錯誤或題目為空，請檢查輸入。</p>
+                        </div>
+
+                        <!-- 下載題庫按鈕 -->
+                        <div>
+                            <button id="download-reading-zip-btn" class="btn bg-teal-600 hover:bg-teal-700 text-white text-sm h-10 px-4 py-2 w-full flex items-center justify-center gap-2">
+                                <i class="fas fa-download"></i>
+                                <span>下載文本及題目 (ZIP)</span>
+                            </button>
                         </div>
                     </div>
 
@@ -2710,7 +2909,8 @@ appId: &quot;...&quot;"></textarea>
         // AI Settings Global Object
         let aiSettings = {
             aiSource: 'gemini-custom', // 'gemini-default' or 'gemini-custom'
-            geminiApiKey: '' // Custom API key if 'gemini-custom' is selected
+            geminiApiKey: '', // Custom API key if 'gemini-custom' is selected
+            selectedModel: 'gemini-2.5-flash' // Selected AI model
         };
         
         // MODIFIED: Combined Dispatch Settings Global Object
@@ -2785,6 +2985,8 @@ appId: &quot;...&quot;"></textarea>
             true_false: document.getElementById('interaction-true-false'),
             multiple_choice: document.getElementById('interaction-multiple-choice'),
             text_input: document.getElementById('interaction-text-input'),
+            word_cloud: document.getElementById('interaction-word-cloud'), // Word cloud UI
+            sticky_note: document.getElementById('interaction-sticky-note'), // Sticky note wall UI
             drawing: document.getElementById('interaction-drawing'),
             url_dispatch: document.getElementById('interaction-url-dispatch'), // Now handles both URL and HTML
             recording: document.getElementById('interaction-recording'), // New UI
@@ -2904,6 +3106,33 @@ appId: &quot;...&quot;"></textarea>
                     submitTextBtn.disabled = false;
                     submitTextBtn.classList.remove('btn-gray');
                     submitTextBtn.classList.add('btn-primary');
+                    break;
+                case 'word_cloud':
+                    document.getElementById('word-cloud-input').value = '';
+                    document.getElementById('word-cloud-char-count').textContent = '0';
+                    const submitWordCloudBtn = document.getElementById('submit-word-cloud-btn');
+                    submitWordCloudBtn.disabled = false;
+                    submitWordCloudBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'btn-gray');
+                    break;
+                case 'sticky_note':
+                    // Reset text input
+                    document.getElementById('sticky-note-text').value = '';
+                    document.getElementById('sticky-text-char-count').textContent = '0';
+                    // Reset image input
+                    stickyNoteImageData = null;
+                    document.getElementById('sticky-image-preview').classList.add('hidden');
+                    document.getElementById('sticky-image-input').value = '';
+                    // Reset to text tab
+                    document.getElementById('sticky-text-tab').classList.add('bg-amber-500', 'text-white');
+                    document.getElementById('sticky-text-tab').classList.remove('bg-slate-200', 'text-slate-600');
+                    document.getElementById('sticky-image-tab').classList.remove('bg-amber-500', 'text-white');
+                    document.getElementById('sticky-image-tab').classList.add('bg-slate-200', 'text-slate-600');
+                    document.getElementById('sticky-text-section').classList.remove('hidden');
+                    document.getElementById('sticky-image-section').classList.add('hidden');
+                    // Enable submit button
+                    const submitStickyNoteBtn = document.getElementById('submit-sticky-note-btn');
+                    submitStickyNoteBtn.disabled = false;
+                    submitStickyNoteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                     break;
                 case 'drawing':
                     // Only clear the drawing canvas if it's NOT resuming from a pause.
@@ -3659,26 +3888,26 @@ appId: &quot;...&quot;"></textarea>
 
             // NEW: Show view reading questions button only for reading_comprehension
             viewReadingQuestionsBtn.classList.toggle('hidden', mode !== 'reading_comprehension');
-            
+
             // NEW: Show peer review button only for text_input and drawing modes
             const startPeerReviewBtn = document.getElementById('start-peer-review-btn');
             startPeerReviewBtn.classList.toggle('hidden', mode !== 'text_input' && mode !== 'drawing');
-            
+
             // NEW: Reset peer review button state when starting new interaction
             if (mode !== 'waiting') {
                 peerReviewActive = false;
                 startPeerReviewBtn.innerHTML = '<i class="fas fa-heart mr-2"></i> 開始互評 ❤️';
                 document.getElementById('peer-review-stats-container').classList.add('hidden');
-                
+
                 // Reset peer review status in Firebase for new interaction
                 const peerReviewRef = doc(db, 'artifacts', baseAppId, 'public', 'data', 'classrooms', classroomCode, 'settings', 'peerReview');
                 setDoc(peerReviewRef, { active: false }).catch(error => {
                     console.error('Error resetting peer review status:', error);
                 });
-                
+
                 // Clear student voting history for new interaction
                 studentVotedWorks.clear();
-                
+
                 // Clear saved canvas state for new interaction
                 savedCanvasState = null;
             }
@@ -3694,6 +3923,33 @@ appId: &quot;...&quot;"></textarea>
             // NEW: Hide pause button for URL/HTML dispatch modes
             const togglePauseBtn = document.getElementById('toggle-pause-btn');
             togglePauseBtn.classList.toggle('hidden', mode === 'url_dispatch');
+
+            // WORD CLOUD: For word_cloud mode, hide all buttons except unsubmitted students button
+            if (mode === 'word_cloud') {
+                showStatisticsBtn.classList.add('hidden');
+                viewQuestionsBtn.classList.add('hidden');
+                viewReadingQuestionsBtn.classList.add('hidden');
+                startPeerReviewBtn.classList.add('hidden');
+                downloadMediaBtn.classList.add('hidden');
+                aiTextSummaryBtn.classList.add('hidden');
+                downloadResponsesBtn.classList.add('hidden');
+                togglePauseBtn.classList.add('hidden');
+                // Keep showUnsubmittedStudentsBtn visible
+                showUnsubmittedStudentsBtn.classList.remove('hidden');
+            }
+
+            // STICKY NOTE: For sticky_note mode, hide all buttons except unsubmitted students button
+            if (mode === 'sticky_note') {
+                showStatisticsBtn.classList.add('hidden');
+                viewQuestionsBtn.classList.add('hidden');
+                viewReadingQuestionsBtn.classList.add('hidden');
+                startPeerReviewBtn.classList.add('hidden');
+                downloadMediaBtn.classList.add('hidden');
+                aiTextSummaryBtn.classList.add('hidden');
+                downloadResponsesBtn.classList.add('hidden');
+                togglePauseBtn.classList.add('hidden');
+                showUnsubmittedStudentsBtn.classList.remove('hidden');
+            }
 
 
             try {
@@ -4082,10 +4338,36 @@ appId: &quot;...&quot;"></textarea>
          */
         function listenToStudentSubmissions(mode) {
              if (studentResponsesUnsubscribe) studentResponsesUnsubscribe();
-             
+
              // Use classroomCode in the Firestore path
              const studentsColRef = collection(db, 'artifacts', baseAppId, 'public', 'data', 'classrooms', classroomCode, 'studentResponses');
              const container = document.getElementById('student-responses-container');
+             const wordCloudDisplay = document.getElementById('word-cloud-display');
+             const stickyNoteWall = document.getElementById('sticky-note-wall');
+
+             // Show/hide appropriate display based on mode
+             if (mode === 'word_cloud') {
+                 container.classList.add('hidden');
+                 wordCloudDisplay.classList.remove('hidden');
+                 stickyNoteWall.classList.add('hidden');
+                 // Clear word cloud SVG when starting fresh
+                 updateWordCloud([]);
+             } else if (mode === 'sticky_note') {
+                 container.classList.add('hidden');
+                 wordCloudDisplay.classList.add('hidden');
+                 stickyNoteWall.classList.remove('hidden');
+                 // Clear sticky notes when starting fresh
+                 clearStickyNotes();
+                 // Trigger canvas initialization via custom event
+                 setTimeout(() => {
+                     const event = new CustomEvent('initStickyCanvas');
+                     window.dispatchEvent(event);
+                 }, 100);
+             } else {
+                 container.classList.remove('hidden');
+                 wordCloudDisplay.classList.add('hidden');
+                 stickyNoteWall.classList.add('hidden');
+             }
 
              studentResponsesUnsubscribe = onSnapshot(studentsColRef, (querySnapshot) => {
                 container.innerHTML = ''; 
@@ -4125,7 +4407,7 @@ appId: &quot;...&quot;"></textarea>
                         } else {
                             answerContentHTML = `<p class="text-gray-500">錄音未完成或格式錯誤</p>`;
                         }
-                    } else if (mode === 'text_input') {
+                    } else if (mode === 'text_input' || mode === 'word_cloud') {
                         answerContentHTML = `<p class="text-gray-700 whitespace-pre-wrap">${student.answer || '(空白)'}</p>`;
                     } else if (mode === 'multiple_choice' && Array.isArray(student.answer) && currentMultipleChoiceQuestions) {
                         // NEW: Handle custom multiple choice answers
@@ -4260,6 +4542,19 @@ appId: &quot;...&quot;"></textarea>
                 });
 
                 allStudentResponses = responses;
+
+                // Special handling for word cloud mode
+                if (mode === 'word_cloud') {
+                    clearTimeout(wordCloudUpdateTimer);
+                    wordCloudUpdateTimer = setTimeout(() => {
+                        updateWordCloud(responses);
+                    }, 300);
+                }
+
+                // Special handling for sticky note mode
+                if (mode === 'sticky_note') {
+                    updateStickyNotes(responses);
+                }
 
                 // Special handling for quick answer mode
                 if (mode === 'quick_answer') {
@@ -4900,6 +5195,294 @@ appId: &quot;...&quot;"></textarea>
             const studentNames = filteredStudents.map(s => s.name).sort(); 
             studentsByAnswerListTitle.textContent = studentNames.length > 0 ? `${titleText} ${studentNames.join(', ')}` : `${titleText} 沒有學生選擇此答案。`;
             studentsByAnswerNamesParagraph.textContent = ''; // Clear this as the title now contains names
+        }
+
+        // === Word Cloud Functions ===
+        let wordCloudUpdateTimer = null;
+
+        function updateWordCloud(responses) {
+            // Count word frequency
+            const wordFreq = {};
+            responses.forEach(response => {
+                const word = response.answer;
+                if (word && word.trim()) {
+                    wordFreq[word] = (wordFreq[word] || 0) + 1;
+                }
+            });
+
+            // Convert to array for d3-cloud
+            const words = Object.entries(wordFreq).map(([text, size]) => ({
+                text,
+                size: 20 + size * 15 // Base size 20, increase by 15 for each occurrence
+            }));
+
+            if (words.length === 0) {
+                d3.select('#word-cloud-svg').selectAll('*').remove();
+                d3.select('#word-cloud-svg')
+                    .append('text')
+                    .attr('x', '50%')
+                    .attr('y', '50%')
+                    .attr('text-anchor', 'middle')
+                    .attr('dominant-baseline', 'middle')
+                    .style('font-size', '24px')
+                    .style('fill', '#94a3b8')
+                    .text('等待學生輸入關鍵字...');
+                return;
+            }
+
+            const svg = document.getElementById('word-cloud-svg');
+            const width = svg.clientWidth || 800;
+            const height = svg.clientHeight || 600;
+
+            const layout = d3.layout.cloud()
+                .size([width, height])
+                .words(words)
+                .padding(8)
+                .rotate(() => (~~(Math.random() * 2) * 90))
+                .font('Noto Sans TC, sans-serif')
+                .fontSize(d => d.size)
+                .on('end', draw);
+
+            layout.start();
+
+            function draw(words) {
+                d3.select('#word-cloud-svg').selectAll('*').remove();
+
+                d3.select('#word-cloud-svg')
+                    .attr('width', width)
+                    .attr('height', height)
+                  .append('g')
+                    .attr('transform', `translate(${width/2},${height/2})`)
+                  .selectAll('text')
+                    .data(words)
+                  .enter().append('text')
+                    .style('font-size', d => d.size + 'px')
+                    .style('font-family', 'Noto Sans TC, sans-serif')
+                    .style('font-weight', '700')
+                    .style('fill', (d, i) => {
+                        const colors = ['#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4'];
+                        return colors[i % colors.length];
+                    })
+                    .attr('text-anchor', 'middle')
+                    .attr('transform', d => `translate(${d.x},${d.y})rotate(${d.rotate})`)
+                    .text(d => d.text)
+                    .style('cursor', 'pointer')
+                    .on('mouseover', function() {
+                        d3.select(this).style('opacity', 0.7);
+                    })
+                    .on('mouseout', function() {
+                        d3.select(this).style('opacity', 1);
+                    });
+            }
+        }
+
+        // === Sticky Note Functions ===
+        const stickyNoteColors = ['#fef3c7', '#fed7aa', '#fecaca', '#ddd6fe', '#bfdbfe', '#a7f3d0', '#fce7f3', '#e0e7ff'];
+        const stickyNotes = new Map(); // Track sticky notes by student name
+        let stickyNoteScale = 1.0; // Default scale
+
+        function updateZoomDisplay() {
+            const zoomLevelEl = document.getElementById('sticky-zoom-level');
+            if (zoomLevelEl) {
+                zoomLevelEl.textContent = Math.round(stickyNoteScale * 100) + '%';
+            }
+        }
+
+        function clearStickyNotes() {
+            const container = document.getElementById('sticky-notes-container');
+            container.innerHTML = '<div class="text-center py-10 text-slate-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" id="sticky-note-placeholder"><i class="fas fa-note-sticky text-4xl mb-4"></i><p class="text-lg font-medium">等待學生送出便利貼...</p></div>';
+            stickyNotes.clear();
+            stickyNoteScale = 1.0;
+            updateZoomDisplay();
+
+            // Clear drawing canvas
+            const canvas = document.getElementById('sticky-drawing-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function updateStickyNotes(responses) {
+            const container = document.getElementById('sticky-notes-container');
+            const placeholder = document.getElementById('sticky-note-placeholder');
+
+            if (responses.length === 0) {
+                clearStickyNotes();
+                return;
+            }
+
+            // Hide placeholder
+            if (placeholder) {
+                placeholder.remove();
+            }
+
+            // Update or create sticky notes
+            responses.forEach((response, index) => {
+                const existingNote = stickyNotes.get(response.name);
+
+                if (!existingNote) {
+                    // Create new sticky note
+                    const note = createStickyNote(response, index);
+                    container.appendChild(note);
+                    stickyNotes.set(response.name, note);
+                } else {
+                    // Update existing note content
+                    updateStickyNoteContent(existingNote, response);
+                }
+            });
+
+            // Remove notes for students who deleted their responses
+            const responseNames = new Set(responses.map(r => r.name));
+            stickyNotes.forEach((note, name) => {
+                if (!responseNames.has(name)) {
+                    note.remove();
+                    stickyNotes.delete(name);
+                }
+            });
+        }
+
+        function createStickyNote(response, index) {
+            const note = document.createElement('div');
+            note.className = 'sticky-note absolute cursor-move shadow-lg hover:shadow-xl transition-shadow duration-200 flex flex-col';
+            note.style.width = '200px';
+            note.style.height = '200px';
+            note.style.backgroundColor = stickyNoteColors[index % stickyNoteColors.length];
+            note.style.padding = '16px';
+            note.style.borderRadius = '8px';
+            note.style.border = '1px solid rgba(0,0,0,0.1)';
+            note.style.transformOrigin = 'top left';
+            note.style.transform = `scale(${stickyNoteScale})`;
+            note.style.zIndex = '10'; // Below canvas layer
+
+            // Random initial position within visible container
+            const container = document.getElementById('sticky-notes-container');
+            const containerRect = container.getBoundingClientRect();
+            const noteSize = 200 * stickyNoteScale; // Account for current scale
+            const maxX = Math.max(containerRect.width - noteSize - 20, 100); // Leave 20px margin
+            const maxY = Math.max(containerRect.height - noteSize - 20, 100);
+            const x = Math.random() * maxX;
+            const y = Math.random() * maxY;
+            note.style.left = x + 'px';
+            note.style.top = y + 'px';
+
+            // Add student name header
+            const header = document.createElement('div');
+            header.className = 'font-bold text-sm mb-2 pb-2 border-b border-slate-400 flex items-center gap-2 flex-shrink-0';
+            header.innerHTML = `<i class="fas fa-user text-xs"></i>${response.name}`;
+            note.appendChild(header);
+
+            // Add content
+            const content = document.createElement('div');
+            content.className = 'sticky-note-content flex items-center justify-center flex-1 overflow-hidden';
+            setStickyNoteContent(content, response);
+            note.appendChild(content);
+
+            // Make draggable
+            makeDraggable(note);
+
+            return note;
+        }
+
+        function updateStickyNoteContent(note, response) {
+            const content = note.querySelector('.sticky-note-content');
+            setStickyNoteContent(content, response);
+        }
+
+        function setStickyNoteContent(contentElement, response) {
+            try {
+                const data = JSON.parse(response.answer);
+
+                if (data.type === 'text') {
+                    const text = escapeHtml(data.content);
+                    const charCount = data.content.length;
+
+                    // Calculate font size based on character count
+                    let fontSize;
+                    if (charCount <= 5) {
+                        fontSize = 48; // Very large for 1-5 characters
+                    } else if (charCount <= 10) {
+                        fontSize = 36; // Large for 6-10 characters
+                    } else if (charCount <= 20) {
+                        fontSize = 28; // Medium-large for 11-20 characters
+                    } else if (charCount <= 30) {
+                        fontSize = 22; // Medium for 21-30 characters
+                    } else if (charCount <= 50) {
+                        fontSize = 18; // Small-medium for 31-50 characters
+                    } else {
+                        fontSize = 14; // Small for 50+ characters
+                    }
+
+                    contentElement.innerHTML = `<div class="text-slate-800 break-words font-bold text-center w-full px-2" style="font-size: ${fontSize}px; line-height: 1.3; word-wrap: break-word; overflow-wrap: break-word;">${text}</div>`;
+                } else if (data.type === 'image') {
+                    contentElement.innerHTML = `<img src="${data.content}" class="w-full h-auto rounded border border-slate-300 object-contain max-h-32">`;
+                }
+            } catch (e) {
+                // Fallback for non-JSON answers
+                const text = escapeHtml(response.answer);
+                const charCount = response.answer.length;
+                let fontSize;
+                if (charCount <= 5) fontSize = 48;
+                else if (charCount <= 10) fontSize = 36;
+                else if (charCount <= 20) fontSize = 28;
+                else if (charCount <= 30) fontSize = 22;
+                else if (charCount <= 50) fontSize = 18;
+                else fontSize = 14;
+                contentElement.innerHTML = `<div class="text-slate-800 break-words font-bold text-center w-full px-2" style="font-size: ${fontSize}px; line-height: 1.3; word-wrap: break-word; overflow-wrap: break-word;">${text}</div>`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function makeDraggable(element) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+            element.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+                element.style.zIndex = 999; // Keep below canvas (1000)
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+
+                // Calculate new position
+                let newTop = element.offsetTop - pos2;
+                let newLeft = element.offsetLeft - pos1;
+
+                // Get container bounds
+                const container = document.getElementById('sticky-notes-container');
+                const containerRect = container.getBoundingClientRect();
+                const elementRect = element.getBoundingClientRect();
+
+                // Constrain to container bounds
+                newTop = Math.max(0, Math.min(newTop, containerRect.height - elementRect.height));
+                newLeft = Math.max(0, Math.min(newLeft, containerRect.width - elementRect.width));
+
+                element.style.top = newTop + 'px';
+                element.style.left = newLeft + 'px';
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+                element.style.zIndex = 10; // Normal z-index, below canvas
+            }
         }
 
         function drawChart(responses, mode) { // Changed parameter name from 'data' to 'responses' to avoid conflict
@@ -5642,9 +6225,12 @@ appId: &quot;...&quot;"></textarea>
         const geminiApiKeyInput = document.getElementById('gemini-api-key-input');
         const saveAiSettingsBtn = document.getElementById('save-ai-settings-btn');
 
+        const aiModelSelect = document.getElementById('ai-model-select');
+
         function showAISettingsModal() {
             aiSourceSelect.value = aiSettings.aiSource;
             geminiApiKeyInput.value = aiSettings.geminiApiKey;
+            aiModelSelect.value = aiSettings.selectedModel;
             geminiApiKeyGroup.classList.toggle('hidden', aiSettings.aiSource !== 'gemini-custom');
             aiSettingsModal.classList.remove('hidden');
         }
@@ -5749,7 +6335,9 @@ appId: &quot;...&quot;"></textarea>
         function saveAISettings() {
             aiSettings.aiSource = aiSourceSelect.value;
             aiSettings.geminiApiKey = geminiApiKeyInput.value.trim();
+            aiSettings.selectedModel = aiModelSelect.value;
             localStorage.setItem('aiSettings', JSON.stringify(aiSettings));
+            updateModelDisplays();
             showMessage('AI 設定已儲存！', 'success');
             hideAISettingsModal();
         }
@@ -5761,16 +6349,48 @@ appId: &quot;...&quot;"></textarea>
                     const parsedSettings = JSON.parse(savedSettings);
                     if (parsedSettings.aiSource) aiSettings.aiSource = parsedSettings.aiSource;
                     // MODIFIED: If geminiApiKey is empty after loading, set default.
-                    aiSettings.geminiApiKey = parsedSettings.geminiApiKey || '12345678'; 
+                    aiSettings.geminiApiKey = parsedSettings.geminiApiKey || '12345678';
+                    aiSettings.selectedModel = parsedSettings.selectedModel || 'gemini-2.5-flash';
                 } catch (e) {
                     console.error("Failed to parse AI settings from localStorage:", e);
                     // If parsing fails, set default API key
                     aiSettings.geminiApiKey = '12345678';
+                    aiSettings.selectedModel = 'gemini-2.5-flash';
                 }
             } else {
                 // If no settings are saved at all, set default API key
                 aiSettings.geminiApiKey = '12345678';
+                aiSettings.selectedModel = 'gemini-2.5-flash';
             }
+            updateModelDisplays();
+        }
+
+        function getApiUrl(apiKey) {
+            const model = aiSettings.selectedModel || 'gemini-2.5-flash';
+            return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        }
+
+        function getCurrentModelName() {
+            const modelMap = {
+                'gemini-2.5-flash': 'Gemini 2.5 Flash',
+                'gemma-3-27b-it': 'Gemma 3 27B IT'
+            };
+            return modelMap[aiSettings.selectedModel] || aiSettings.selectedModel;
+        }
+
+        function updateModelDisplays() {
+            const modelName = getCurrentModelName();
+            const displayText = `使用模型: ${modelName}`;
+
+            const displays = [
+                document.getElementById('ai-mc-model-name'),
+                document.getElementById('ai-seq-model-name'),
+                document.getElementById('ai-match-model-name')
+            ];
+
+            displays.forEach(display => {
+                if (display) display.textContent = displayText;
+            });
         }
 
         // --- New: URL/HTML Dispatch Settings Modal Functions (Combined) ---
@@ -6685,7 +7305,366 @@ appId: &quot;...&quot;"></textarea>
                 e.currentTarget.disabled = true;
                 e.currentTarget.classList.replace('btn-primary', 'btn-gray');
             });
-            
+
+            // Word cloud input character count
+            document.getElementById('word-cloud-input').addEventListener('input', (e) => {
+                const charCount = e.target.value.length;
+                document.getElementById('word-cloud-char-count').textContent = charCount;
+            });
+
+            // Word cloud submission
+            document.getElementById('submit-word-cloud-btn').addEventListener('click', async (e) => {
+                if (isResponsePaused) {
+                    showMessage('老師已暫停回覆，無法送出答案。', 'error');
+                    return;
+                }
+                const text = document.getElementById('word-cloud-input').value.trim();
+                if (!text) {
+                    showMessage('請輸入關鍵字', 'error');
+                    return;
+                }
+                // Save button reference before async call
+                const btn = e.currentTarget;
+                await submitAnswer(text);
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                document.getElementById('word-cloud-input').value = '';
+                document.getElementById('word-cloud-char-count').textContent = '0';
+            });
+
+            // === Sticky Note Event Listeners ===
+            let stickyNoteImageData = null;
+
+            // Tab switching
+            document.getElementById('sticky-text-tab').addEventListener('click', () => {
+                document.getElementById('sticky-text-tab').classList.add('bg-amber-500', 'text-white');
+                document.getElementById('sticky-text-tab').classList.remove('bg-slate-200', 'text-slate-600');
+                document.getElementById('sticky-image-tab').classList.remove('bg-amber-500', 'text-white');
+                document.getElementById('sticky-image-tab').classList.add('bg-slate-200', 'text-slate-600');
+                document.getElementById('sticky-text-section').classList.remove('hidden');
+                document.getElementById('sticky-image-section').classList.add('hidden');
+            });
+
+            document.getElementById('sticky-image-tab').addEventListener('click', () => {
+                document.getElementById('sticky-image-tab').classList.add('bg-amber-500', 'text-white');
+                document.getElementById('sticky-image-tab').classList.remove('bg-slate-200', 'text-slate-600');
+                document.getElementById('sticky-text-tab').classList.remove('bg-amber-500', 'text-white');
+                document.getElementById('sticky-text-tab').classList.add('bg-slate-200', 'text-slate-600');
+                document.getElementById('sticky-image-section').classList.remove('hidden');
+                document.getElementById('sticky-text-section').classList.add('hidden');
+            });
+
+            // Text character count
+            document.getElementById('sticky-note-text').addEventListener('input', (e) => {
+                const charCount = e.target.value.length;
+                document.getElementById('sticky-text-char-count').textContent = charCount;
+            });
+
+            // Image compression function
+            function compressImage(file, maxWidth = 800, quality = 0.8) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+
+                            // Calculate new dimensions
+                            if (width > maxWidth) {
+                                height = (height * maxWidth) / width;
+                                width = maxWidth;
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            // Convert to JPEG with compression
+                            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                            resolve(compressedDataUrl);
+                        };
+                        img.onerror = reject;
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // Handle image selection
+            document.getElementById('sticky-select-image-btn').addEventListener('click', () => {
+                document.getElementById('sticky-image-input').click();
+            });
+
+            document.getElementById('sticky-capture-image-btn').addEventListener('click', () => {
+                const input = document.getElementById('sticky-image-input');
+                input.setAttribute('capture', 'environment');
+                input.click();
+            });
+
+            document.getElementById('sticky-image-input').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    try {
+                        const compressed = await compressImage(file);
+                        stickyNoteImageData = compressed;
+                        document.getElementById('sticky-preview-img').src = compressed;
+                        document.getElementById('sticky-image-preview').classList.remove('hidden');
+                    } catch (error) {
+                        console.error('圖片處理失敗:', error);
+                        showMessage('圖片處理失敗，請重試', 'error');
+                    }
+                }
+            });
+
+            // Sticky note submission
+            document.getElementById('submit-sticky-note-btn').addEventListener('click', async (e) => {
+                if (isResponsePaused) {
+                    showMessage('老師已暫停回覆，無法送出答案。', 'error');
+                    return;
+                }
+
+                const textTab = document.getElementById('sticky-text-tab');
+                const isTextMode = textTab.classList.contains('bg-amber-500');
+
+                let answerData = {};
+
+                if (isTextMode) {
+                    const text = document.getElementById('sticky-note-text').value.trim();
+                    if (!text) {
+                        showMessage('請輸入文字內容', 'error');
+                        return;
+                    }
+                    answerData = { type: 'text', content: text };
+                } else {
+                    if (!stickyNoteImageData) {
+                        showMessage('請選擇或拍攝圖片', 'error');
+                        return;
+                    }
+                    answerData = { type: 'image', content: stickyNoteImageData };
+                }
+
+                const btn = e.currentTarget;
+                await submitAnswer(JSON.stringify(answerData));
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+                // Clear inputs
+                document.getElementById('sticky-note-text').value = '';
+                document.getElementById('sticky-text-char-count').textContent = '0';
+                stickyNoteImageData = null;
+                document.getElementById('sticky-image-preview').classList.add('hidden');
+                document.getElementById('sticky-image-input').value = '';
+            });
+
+            // === Sticky Note Zoom Controls ===
+            function applyStickyNoteScale() {
+                stickyNotes.forEach(note => {
+                    note.style.transform = `scale(${stickyNoteScale})`;
+                });
+                updateZoomDisplay();
+            }
+
+            document.getElementById('sticky-zoom-in').addEventListener('click', () => {
+                stickyNoteScale = Math.min(stickyNoteScale + 0.1, 2.0);
+                applyStickyNoteScale();
+            });
+
+            document.getElementById('sticky-zoom-out').addEventListener('click', () => {
+                stickyNoteScale = Math.max(stickyNoteScale - 0.1, 0.3);
+                applyStickyNoteScale();
+            });
+
+            document.getElementById('sticky-zoom-reset').addEventListener('click', () => {
+                stickyNoteScale = 1.0;
+                applyStickyNoteScale();
+            });
+
+            // === Sticky Note Wall Drawing Canvas ===
+            // Sticky Note Wall Drawing Functions - Wrapped in IIFE to avoid global scope pollution
+            (function() {
+                const stickyCanvas = document.getElementById('sticky-drawing-canvas');
+                const stickyCtx = stickyCanvas.getContext('2d');
+                let stickyIsDrawing = false;
+                let currentTool = 'pen';
+                let penColor = '#000000';
+                let penWidth = 4;
+                let stickyLastX = 0;
+                let stickyLastY = 0;
+                let currentMode = 'mouse'; // 'mouse' or 'draw'
+
+                // Initialize canvas size
+                function initStickyCanvas() {
+                    const container = document.getElementById('sticky-notes-container');
+                    if (!container) return;
+
+                    const rect = container.getBoundingClientRect();
+                    if (rect.width > 0 && rect.height > 0) {
+                        stickyCanvas.width = rect.width;
+                        stickyCanvas.height = rect.height;
+                        stickyCtx.lineCap = 'round';
+                        stickyCtx.lineJoin = 'round';
+                        console.log('Canvas initialized:', rect.width, 'x', rect.height);
+                    } else {
+                        console.warn('Container has no size, cannot initialize canvas');
+                    }
+                }
+
+                // Update canvas size on window resize
+                window.addEventListener('resize', () => {
+                    const container = document.getElementById('sticky-notes-container');
+                    if (container && stickyCanvas && stickyCanvas.width > 0 && stickyCanvas.height > 0) {
+                        const rect = container.getBoundingClientRect();
+                        if (rect.width > 0 && rect.height > 0) {
+                            // Save current canvas content
+                            const tempCanvas = document.createElement('canvas');
+                            const tempCtx = tempCanvas.getContext('2d');
+                            tempCanvas.width = stickyCanvas.width;
+                            tempCanvas.height = stickyCanvas.height;
+                            tempCtx.drawImage(stickyCanvas, 0, 0);
+
+                            // Resize and restore
+                            stickyCanvas.width = rect.width;
+                            stickyCanvas.height = rect.height;
+                            stickyCtx.lineCap = 'round';
+                            stickyCtx.lineJoin = 'round';
+                            stickyCtx.drawImage(tempCanvas, 0, 0);
+                        }
+                    }
+                });
+
+                // Mode switching
+                function setMouseMode() {
+                    currentMode = 'mouse';
+                    stickyCanvas.style.pointerEvents = 'none';
+                    document.getElementById('mouse-mode').classList.add('bg-blue-500', 'text-white');
+                    document.getElementById('mouse-mode').classList.remove('bg-slate-200', 'text-slate-700');
+                    document.getElementById('draw-mode').classList.remove('bg-blue-500', 'text-white');
+                    document.getElementById('draw-mode').classList.add('bg-slate-200', 'text-slate-700');
+                    document.getElementById('drawing-tools').classList.add('opacity-50');
+                    document.getElementById('drawing-tools').style.pointerEvents = 'none';
+                }
+
+                function setDrawMode() {
+                    currentMode = 'draw';
+                    stickyCanvas.style.pointerEvents = 'auto';
+                    document.getElementById('draw-mode').classList.add('bg-blue-500', 'text-white');
+                    document.getElementById('draw-mode').classList.remove('bg-slate-200', 'text-slate-700');
+                    document.getElementById('mouse-mode').classList.remove('bg-blue-500', 'text-white');
+                    document.getElementById('mouse-mode').classList.add('bg-slate-200', 'text-slate-700');
+                    document.getElementById('drawing-tools').classList.remove('opacity-50');
+                    document.getElementById('drawing-tools').style.pointerEvents = 'auto';
+                }
+
+                document.getElementById('mouse-mode').addEventListener('click', setMouseMode);
+                document.getElementById('draw-mode').addEventListener('click', setDrawMode);
+
+                // Drawing functions with corrected coordinates
+                function stickyStartDrawing(e) {
+                    if (currentMode !== 'draw') return;
+                    stickyIsDrawing = true;
+                    const rect = stickyCanvas.getBoundingClientRect();
+                    stickyLastX = e.clientX - rect.left;
+                    stickyLastY = e.clientY - rect.top;
+                }
+
+                function stickyDraw(e) {
+                    if (!stickyIsDrawing || currentMode !== 'draw') return;
+                    const rect = stickyCanvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    stickyCtx.beginPath();
+                    stickyCtx.moveTo(stickyLastX, stickyLastY);
+                    stickyCtx.lineTo(x, y);
+
+                    if (currentTool === 'pen') {
+                        stickyCtx.strokeStyle = penColor;
+                        stickyCtx.lineWidth = penWidth;
+                        stickyCtx.globalCompositeOperation = 'source-over';
+                    } else if (currentTool === 'eraser') {
+                        stickyCtx.globalCompositeOperation = 'destination-out';
+                        stickyCtx.lineWidth = 20;
+                    }
+
+                    stickyCtx.stroke();
+                    stickyLastX = x;
+                    stickyLastY = y;
+                }
+
+                function stickyStopDrawing() {
+                    stickyIsDrawing = false;
+                }
+
+                // Canvas event listeners
+                stickyCanvas.addEventListener('mousedown', stickyStartDrawing);
+                stickyCanvas.addEventListener('mousemove', stickyDraw);
+                stickyCanvas.addEventListener('mouseup', stickyStopDrawing);
+                stickyCanvas.addEventListener('mouseout', stickyStopDrawing);
+
+                // Tool selection
+                document.getElementById('pen-tool').addEventListener('click', () => {
+                    currentTool = 'pen';
+                    setDrawMode(); // Auto switch to draw mode
+                    document.getElementById('pen-tool').classList.add('bg-blue-500', 'text-white');
+                    document.getElementById('pen-tool').classList.remove('bg-slate-200', 'text-slate-700');
+                    document.getElementById('eraser-tool').classList.remove('bg-blue-500', 'text-white');
+                    document.getElementById('eraser-tool').classList.add('bg-slate-200', 'text-slate-700');
+                });
+
+                document.getElementById('eraser-tool').addEventListener('click', () => {
+                    currentTool = 'eraser';
+                    setDrawMode(); // Auto switch to draw mode
+                    document.getElementById('eraser-tool').classList.add('bg-blue-500', 'text-white');
+                    document.getElementById('eraser-tool').classList.remove('bg-slate-200', 'text-slate-700');
+                    document.getElementById('pen-tool').classList.remove('bg-blue-500', 'text-white');
+                    document.getElementById('pen-tool').classList.add('bg-slate-200', 'text-slate-700');
+                });
+
+                // Color selection
+                document.querySelectorAll('.pen-color').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        penColor = e.currentTarget.dataset.color;
+                        document.querySelectorAll('.pen-color').forEach(b => {
+                            b.classList.remove('border-2', 'border-slate-400');
+                            b.classList.add('border', 'border-slate-300');
+                        });
+                        e.currentTarget.classList.add('border-2', 'border-slate-400');
+                        e.currentTarget.classList.remove('border', 'border-slate-300');
+                        currentTool = 'pen';
+                        setDrawMode(); // Auto switch to draw mode
+                        // Update pen tool button
+                        document.getElementById('pen-tool').classList.add('bg-blue-500', 'text-white');
+                        document.getElementById('pen-tool').classList.remove('bg-slate-200', 'text-slate-700');
+                        document.getElementById('eraser-tool').classList.remove('bg-blue-500', 'text-white');
+                        document.getElementById('eraser-tool').classList.add('bg-slate-200', 'text-slate-700');
+                    });
+                });
+
+                // Width selection
+                document.getElementById('pen-width').addEventListener('change', (e) => {
+                    penWidth = parseInt(e.target.value);
+                });
+
+                // Clear canvas
+                document.getElementById('clear-canvas').addEventListener('click', () => {
+                    if (confirm('確定要清除所有畫記嗎？')) {
+                        const canvas = document.getElementById('sticky-drawing-canvas');
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+                });
+
+                // Listen for canvas initialization event
+                window.addEventListener('initStickyCanvas', () => {
+                    initStickyCanvas();
+                    setMouseMode();
+                });
+            })(); // End of Sticky Note Wall Drawing IIFE
+
             // Drawing submission.
             document.getElementById('submit-drawing-btn').addEventListener('click', async (e) => {
                 // NEW: Check pause state before submitting
@@ -6976,7 +7955,7 @@ appId: &quot;...&quot;"></textarea>
                         generationConfig: { responseMimeType: "application/json", responseSchema: { type: "ARRAY", items: { type: "OBJECT", properties: { "word": { "type": "STRING" }, "count": { "type": "NUMBER" } }, "propertyOrdering": ["word", "count"] } } }
                     };
                     const apiKey = (aiSettings.aiSource === 'gemini-custom' && aiSettings.geminiApiKey) ? aiSettings.geminiApiKey : "";
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const response = await fetch(getApiUrl(apiKey), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
                     if (!response.ok) {
                         aiLoadingSpinner.classList.add('hidden');
@@ -7310,7 +8289,7 @@ appId: &quot;...&quot;"></textarea>
                         generationConfig: { temperature: 0.7 } // Adjust temperature for creativity
                     };
                     const apiKey = aiSettings.geminiApiKey;
-                    apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    apiResponse = await fetch(getApiUrl(apiKey), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
                     if (!apiResponse.ok) {
                         throw new Error(`AI API request failed with status ${apiResponse.status}`);
@@ -7381,7 +8360,7 @@ appId: &quot;...&quot;"></textarea>
                         generationConfig: { temperature: 0.7 }
                     };
                     const apiKey = aiSettings.geminiApiKey;
-                    apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    apiResponse = await fetch(getApiUrl(apiKey), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
                     if (!apiResponse.ok) {
                         throw new Error(`AI API request failed with status ${apiResponse.status}`);
@@ -7452,7 +8431,7 @@ appId: &quot;...&quot;"></textarea>
                         generationConfig: { temperature: 0.7 }
                     };
                     const apiKey = aiSettings.geminiApiKey;
-                    apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    apiResponse = await fetch(getApiUrl(apiKey), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
                     if (!apiResponse.ok) {
                         throw new Error(`AI API request failed with status ${apiResponse.status}`);
@@ -7499,6 +8478,7 @@ appId: &quot;...&quot;"></textarea>
             document.getElementById('ai-generate-reading-btn')?.addEventListener('click', generatePIRLSQuestions);
             document.getElementById('load-reading-files-btn')?.addEventListener('click', loadReadingFiles);
             document.getElementById('save-reading-question-bank-btn')?.addEventListener('click', saveReadingQuestionBank);
+            document.getElementById('download-reading-zip-btn')?.addEventListener('click', downloadReadingZip);
 
             // View Reading Questions Modal Listeners
             document.getElementById('view-reading-questions-btn')?.addEventListener('click', showViewReadingQuestionsModal);
@@ -8373,7 +9353,7 @@ appId: &quot;...&quot;"></textarea>
                 projectId: "demo",
                 storageBucket: "demo",
                 messagingSenderId: "demo",
-                appId: "demoV4"
+                appId: "demoV4.2"
             };
             // ============================================================================
 
@@ -10483,7 +11463,7 @@ ${existingText}
                 };
 
                 const apiKey = aiSettings.geminiApiKey;
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                const response = await fetch(getApiUrl(apiKey), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -10713,6 +11693,49 @@ ${existingText}
             updateReadingBankList();
             showMessage(`題庫「${bankName}」已儲存！`, 'success');
             nameInput.value = '';
+        }
+
+        /**
+         * Download reading text and questions as a ZIP file
+         */
+        async function downloadReadingZip() {
+            const textContent = document.getElementById('reading-text-textarea').value.trim();
+            const questionsContent = document.getElementById('reading-questions-textarea').value.trim();
+
+            if (!textContent && !questionsContent) {
+                showMessage('請先輸入文本或題目！', 'error');
+                return;
+            }
+
+            try {
+                // Create a new JSZip instance
+                const zip = new JSZip();
+
+                // Add text file if content exists
+                if (textContent) {
+                    zip.file('文本.txt', textContent);
+                }
+
+                // Add questions file if content exists
+                if (questionsContent) {
+                    zip.file('題目.txt', questionsContent);
+                }
+
+                // Generate the zip file
+                const content = await zip.generateAsync({ type: 'blob' });
+
+                // Create filename with timestamp
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+                const filename = `閱讀測驗_${timestamp}.zip`;
+
+                // Download the file using FileSaver.js
+                saveAs(content, filename);
+
+                showMessage('檔案下載成功！', 'success');
+            } catch (error) {
+                console.error('Download error:', error);
+                showMessage('下載失敗，請重試！', 'error');
+            }
         }
 
         /**
