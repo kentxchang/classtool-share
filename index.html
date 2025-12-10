@@ -992,6 +992,31 @@
             }
         }
 
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .animate-fade-in-up {
+            animation: fade-in-up 0.6s ease-out forwards;
+        }
+
         /* NEW: Styles for enlarged default multiple-choice buttons */
         #interaction-multiple-choice.enlarged-buttons #default-mc-options .answer-btn {
             width: 12rem; /* Double the original 6rem (h-24) */
@@ -1353,7 +1378,7 @@
                 <div class="text-center mt-8">
                     <p class="text-xs text-slate-400">App ID: <span id="app-id-display"></span> &nbsp;&bull;&nbsp; User ID: <span id="user-id-display"></span></p>
                     <div class="mt-2 text-slate-400 text-sm">
-                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.2</a>
+                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.4</a>
                     </div>
                     <div class="mt-4 text-slate-500 text-xs max-w-2xl mx-auto px-4">
                         <p class="mb-2">
@@ -1476,6 +1501,12 @@
                         <i class="fas fa-note-sticky"></i>
                     </div>
                     <span class="font-bold text-slate-700 text-lg">便利貼牆</span>
+                </button>
+                <button data-mode="focus_game" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                    <div class="w-14 h-14 rounded-2xl bg-cyan-100 text-cyan-600 flex items-center justify-center text-2xl group-hover:bg-cyan-600 group-hover:text-white transition">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <span class="font-bold text-slate-700 text-lg">專注力遊戲</span>
                 </button>
                 <button data-mode="quick_answer" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
                     <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl group-hover:bg-amber-600 group-hover:text-white transition">
@@ -1633,6 +1664,24 @@
                 </div>
             </div>
 
+            <!-- Focus Game Results Display (Teacher) -->
+            <div id="focus-game-results" class="hidden bg-gradient-to-br from-cyan-50 to-blue-50 p-6 rounded-2xl border-2 border-cyan-200 h-[calc(100vh-180px)] overflow-y-auto">
+                <div class="mb-6 text-center">
+                    <h3 class="text-2xl font-bold text-cyan-700 flex items-center justify-center gap-2">
+                        <i class="fas fa-trophy"></i> 專注力遊戲 - 完成時間
+                    </h3>
+                    <p class="text-sm text-slate-600 mt-2">學生按時間分組顯示</p>
+                </div>
+
+                <!-- Time Groups Container -->
+                <div id="focus-time-groups" class="space-y-4">
+                    <div class="text-center py-20 text-slate-400">
+                        <i class="fas fa-hourglass-start text-4xl mb-4"></i>
+                        <p class="text-lg font-medium">等待學生完成遊戲...</p>
+                    </div>
+                </div>
+            </div>
+
             <div id="student-responses-container" class="bg-slate-100 p-6 rounded-2xl border border-slate-200 h-[calc(100vh-180px)] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 content-start">
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-slate-400">
                     <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
@@ -1777,6 +1826,68 @@
                  </div>
 
                  <button id="submit-sticky-note-btn" class="btn bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 mt-6 max-w-xs mx-auto rounded-xl shadow-lg shadow-amber-200 text-lg py-3">送出便利貼 <i class="fas fa-paper-plane ml-2"></i></button>
+            </div>
+
+            <!-- Focus Game Interaction (Student) -->
+            <div id="interaction-focus-game" class="hidden text-center w-full max-w-4xl mx-auto pt-10 px-4">
+                <h3 class="text-3xl font-bold text-slate-800 mb-6 flex items-center justify-center gap-3">
+                    <span class="bg-cyan-100 text-cyan-600 p-2 rounded-lg"><i class="fas fa-brain"></i></span> 專注力遊戲
+                </h3>
+
+                <!-- Game Instructions -->
+                <div id="focus-game-instructions" class="bg-gradient-to-br from-cyan-50 to-blue-50 p-6 rounded-2xl shadow-lg border-2 border-cyan-200 mb-6">
+                    <h4 class="text-xl font-bold text-cyan-700 mb-4 flex items-center justify-center gap-2">
+                        <i class="fas fa-info-circle"></i> 遊戲說明
+                    </h4>
+                    <div class="text-left text-slate-700 space-y-2 max-w-2xl mx-auto">
+                        <p class="flex items-start gap-2">
+                            <i class="fas fa-circle-check text-cyan-500 mt-1 flex-shrink-0"></i>
+                            <span>在 6×6 的方格中，找到數字 1 並點擊開始</span>
+                        </p>
+                        <p class="flex items-start gap-2">
+                            <i class="fas fa-circle-check text-cyan-500 mt-1 flex-shrink-0"></i>
+                            <span>依序點擊 1 到 36，點對就會消失</span>
+                        </p>
+                        <p class="flex items-start gap-2">
+                            <i class="fas fa-circle-check text-cyan-500 mt-1 flex-shrink-0"></i>
+                            <span>盡快完成所有數字，系統會記錄你的時間</span>
+                        </p>
+                        <p class="flex items-start gap-2">
+                            <i class="fas fa-trophy text-amber-500 mt-1 flex-shrink-0"></i>
+                            <span class="font-bold text-cyan-600">越快完成代表專注力越好！加油！</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Timer Display -->
+                <div id="focus-game-timer" class="hidden mb-4">
+                    <div class="inline-block bg-white px-6 py-3 rounded-full shadow-lg border-2 border-cyan-300">
+                        <span class="text-2xl font-bold text-cyan-600">
+                            <i class="fas fa-stopwatch mr-2"></i>
+                            <span id="focus-timer-display">0.00</span> 秒
+                        </span>
+                    </div>
+                    <p class="text-sm text-slate-500 mt-2">下一個數字：<span id="focus-next-number" class="font-bold text-cyan-600">1</span></p>
+                </div>
+
+                <!-- Game Grid (6x6) -->
+                <div id="focus-game-grid" class="grid grid-cols-6 gap-2 max-w-2xl mx-auto mb-6">
+                    <!-- Grid cells will be generated by JavaScript -->
+                </div>
+
+                <!-- Completion Message -->
+                <div id="focus-game-complete" class="hidden">
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-2xl shadow-xl border-2 border-green-300 max-w-lg mx-auto animate-fade-in-up">
+                        <div class="text-6xl mb-4">🎉</div>
+                        <h4 class="text-3xl font-bold text-green-700 mb-4">恭喜完成！</h4>
+                        <div class="bg-white p-4 rounded-xl mb-4 shadow-inner">
+                            <p class="text-4xl font-bold text-cyan-600">
+                                <i class="fas fa-clock"></i> <span id="focus-final-time">0.00</span> 秒
+                            </p>
+                        </div>
+                        <p id="focus-encouragement" class="text-lg text-slate-700 font-medium italic">太棒了！你的專注力很好！</p>
+                    </div>
+                </div>
             </div>
 
             <div id="interaction-drawing" class="hidden text-center flex flex-col h-full min-h-screen bg-slate-100">
@@ -2987,6 +3098,7 @@ appId: &quot;...&quot;"></textarea>
             text_input: document.getElementById('interaction-text-input'),
             word_cloud: document.getElementById('interaction-word-cloud'), // Word cloud UI
             sticky_note: document.getElementById('interaction-sticky-note'), // Sticky note wall UI
+            focus_game: document.getElementById('interaction-focus-game'), // Focus game UI
             drawing: document.getElementById('interaction-drawing'),
             url_dispatch: document.getElementById('interaction-url-dispatch'), // Now handles both URL and HTML
             recording: document.getElementById('interaction-recording'), // New UI
@@ -3217,6 +3329,12 @@ appId: &quot;...&quot;"></textarea>
                     submitMatchingBtn.classList.add('btn-primary');
                     currentMatchingSelection.leftItem = null;
                     currentMatchingSelection.rightItem = null;
+                    break;
+                case 'focus_game':
+                    // Reset focus game state
+                    if (!isResumingFromPause) {
+                        initializeFocusGame();
+                    }
                     break;
                 case 'reading_comprehension':
                     // Only clear content if not resuming from pause
@@ -4344,18 +4462,21 @@ appId: &quot;...&quot;"></textarea>
              const container = document.getElementById('student-responses-container');
              const wordCloudDisplay = document.getElementById('word-cloud-display');
              const stickyNoteWall = document.getElementById('sticky-note-wall');
+             const focusGameResults = document.getElementById('focus-game-results');
 
              // Show/hide appropriate display based on mode
              if (mode === 'word_cloud') {
                  container.classList.add('hidden');
                  wordCloudDisplay.classList.remove('hidden');
                  stickyNoteWall.classList.add('hidden');
+                 focusGameResults.classList.add('hidden');
                  // Clear word cloud SVG when starting fresh
                  updateWordCloud([]);
              } else if (mode === 'sticky_note') {
                  container.classList.add('hidden');
                  wordCloudDisplay.classList.add('hidden');
                  stickyNoteWall.classList.remove('hidden');
+                 focusGameResults.classList.add('hidden');
                  // Clear sticky notes when starting fresh
                  clearStickyNotes();
                  // Trigger canvas initialization via custom event
@@ -4363,10 +4484,18 @@ appId: &quot;...&quot;"></textarea>
                      const event = new CustomEvent('initStickyCanvas');
                      window.dispatchEvent(event);
                  }, 100);
+             } else if (mode === 'focus_game') {
+                 container.classList.add('hidden');
+                 wordCloudDisplay.classList.add('hidden');
+                 stickyNoteWall.classList.add('hidden');
+                 focusGameResults.classList.remove('hidden');
+                 // Clear focus game results when starting fresh
+                 clearFocusGameResults();
              } else {
                  container.classList.remove('hidden');
                  wordCloudDisplay.classList.add('hidden');
                  stickyNoteWall.classList.add('hidden');
+                 focusGameResults.classList.add('hidden');
              }
 
              studentResponsesUnsubscribe = onSnapshot(studentsColRef, (querySnapshot) => {
@@ -4554,6 +4683,11 @@ appId: &quot;...&quot;"></textarea>
                 // Special handling for sticky note mode
                 if (mode === 'sticky_note') {
                     updateStickyNotes(responses);
+                }
+
+                // Special handling for focus game mode
+                if (mode === 'focus_game') {
+                    updateFocusGameResults(responses);
                 }
 
                 // Special handling for quick answer mode
@@ -5483,6 +5617,191 @@ appId: &quot;...&quot;"></textarea>
                 document.onmousemove = null;
                 element.style.zIndex = 10; // Normal z-index, below canvas
             }
+        }
+
+        // === Focus Game Functions ===
+        let focusGameState = {
+            numbers: [],
+            currentNumber: 1,
+            startTime: null,
+            isPlaying: false,
+            timerInterval: null
+        };
+
+        function initializeFocusGame() {
+            // Reset game state
+            focusGameState = {
+                numbers: shuffleArray([...Array(36)].map((_, i) => i + 1)),
+                currentNumber: 1,
+                startTime: null,
+                isPlaying: false,
+                timerInterval: null
+            };
+
+            // Show instructions, hide timer and completion
+            document.getElementById('focus-game-instructions').classList.remove('hidden');
+            document.getElementById('focus-game-timer').classList.add('hidden');
+            document.getElementById('focus-game-complete').classList.add('hidden');
+
+            // Generate 6x6 grid
+            const grid = document.getElementById('focus-game-grid');
+            grid.classList.remove('hidden'); // Show the grid
+            grid.innerHTML = '';
+            focusGameState.numbers.forEach((num, index) => {
+                const cell = document.createElement('button');
+                cell.className = 'focus-game-cell w-full aspect-square bg-gradient-to-br from-cyan-100 to-blue-100 hover:from-cyan-200 hover:to-blue-200 rounded-xl shadow-md border-2 border-cyan-300 text-3xl font-bold text-cyan-700 transition transform hover:scale-105 active:scale-95';
+                cell.textContent = num;
+                cell.dataset.number = num;
+                cell.addEventListener('click', handleFocusGameClick);
+                grid.appendChild(cell);
+            });
+
+            document.getElementById('focus-next-number').textContent = '1';
+            document.getElementById('focus-timer-display').textContent = '0.00';
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function handleFocusGameClick(e) {
+            const clickedNumber = parseInt(e.currentTarget.dataset.number);
+
+            // Start timer on first click (number 1)
+            if (!focusGameState.isPlaying && clickedNumber === 1) {
+                focusGameState.isPlaying = true;
+                focusGameState.startTime = Date.now();
+                document.getElementById('focus-game-instructions').classList.add('hidden');
+                document.getElementById('focus-game-timer').classList.remove('hidden');
+                startFocusGameTimer();
+            }
+
+            // Check if clicked correct number
+            if (clickedNumber === focusGameState.currentNumber) {
+                // Correct click - hide the cell
+                e.currentTarget.style.opacity = '0';
+                e.currentTarget.style.pointerEvents = 'none';
+
+                focusGameState.currentNumber++;
+                document.getElementById('focus-next-number').textContent = focusGameState.currentNumber;
+
+                // Check if game is complete
+                if (focusGameState.currentNumber > 36) {
+                    completeFocusGame();
+                }
+            } else if (focusGameState.isPlaying) {
+                // Wrong click - visual feedback
+                e.currentTarget.classList.add('shake');
+                setTimeout(() => {
+                    e.currentTarget.classList.remove('shake');
+                }, 500);
+            }
+        }
+
+        function startFocusGameTimer() {
+            focusGameState.timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - focusGameState.startTime) / 1000;
+                document.getElementById('focus-timer-display').textContent = elapsed.toFixed(2);
+            }, 10);
+        }
+
+        function completeFocusGame() {
+            // Stop timer
+            clearInterval(focusGameState.timerInterval);
+            const finalTime = ((Date.now() - focusGameState.startTime) / 1000).toFixed(2);
+
+            // Hide timer and grid
+            document.getElementById('focus-game-timer').classList.add('hidden');
+            document.getElementById('focus-game-grid').classList.add('hidden');
+
+            // Show completion message
+            document.getElementById('focus-final-time').textContent = finalTime;
+            document.getElementById('focus-encouragement').textContent = getFocusEncouragement(parseFloat(finalTime));
+            document.getElementById('focus-game-complete').classList.remove('hidden');
+
+            // Submit result to teacher
+            submitAnswer(finalTime);
+        }
+
+        function getFocusEncouragement(time) {
+            if (time <= 10) return '驚人！你的專注力超乎尋常，反應神速！🏆';
+            if (time <= 15) return '太棒了！你的專注力非常優秀！⭐';
+            if (time <= 20) return '很好！你的專注力很不錯！👍';
+            if (time <= 30) return '不錯！繼續保持專注！💪';
+            if (time <= 40) return '做得好！多練習會更進步！😊';
+            return '完成了！記得常常練習提升專注力哦！📚';
+        }
+
+        function clearFocusGameResults() {
+            const container = document.getElementById('focus-time-groups');
+            container.innerHTML = `
+                <div class="text-center py-20 text-slate-400">
+                    <i class="fas fa-hourglass-start text-4xl mb-4"></i>
+                    <p class="text-lg font-medium">等待學生完成遊戲...</p>
+                </div>
+            `;
+        }
+
+        function updateFocusGameResults(responses) {
+            const container = document.getElementById('focus-time-groups');
+
+            if (!responses || responses.length === 0) {
+                clearFocusGameResults();
+                return;
+            }
+
+            // Parse times and group students
+            const students = responses.map(r => ({
+                name: r.name,
+                time: parseFloat(r.answer)
+            })).filter(s => !isNaN(s.time));
+
+            // Sort by time
+            students.sort((a, b) => a.time - b.time);
+
+            // Group students by time ranges
+            const groups = [
+                { label: '⚡ 閃電級 (1-10秒)', min: 0, max: 10, students: [], color: 'from-yellow-100 to-amber-100 border-yellow-300' },
+                { label: '🏆 優秀級 (10-15秒)', min: 10, max: 15, students: [], color: 'from-green-100 to-emerald-100 border-green-300' },
+                { label: '⭐ 良好級 (15-20秒)', min: 15, max: 20, students: [], color: 'from-blue-100 to-cyan-100 border-blue-300' },
+                { label: '💪 加油級 (20-25秒)', min: 20, max: 25, students: [], color: 'from-purple-100 to-violet-100 border-purple-300' },
+                { label: '📚 練習級 (25-30秒)', min: 25, max: 30, students: [], color: 'from-pink-100 to-rose-100 border-pink-300' },
+                { label: '🌟 努力級 (30秒以上)', min: 30, max: Infinity, students: [], color: 'from-slate-100 to-gray-100 border-slate-300' }
+            ];
+
+            students.forEach(student => {
+                const group = groups.find(g => student.time > g.min && student.time <= g.max);
+                if (group) {
+                    group.students.push(student);
+                }
+            });
+
+            // Display groups
+            container.innerHTML = groups
+                .filter(g => g.students.length > 0)
+                .map(group => `
+                    <div class="bg-gradient-to-r ${group.color} border-2 rounded-xl p-4 shadow-md">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-lg font-bold text-slate-700">${group.label}</h4>
+                            <span class="bg-white px-3 py-1 rounded-full text-sm font-bold text-slate-600">
+                                ${group.students.length} 位學生
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                            ${group.students.map(s => `
+                                <div class="bg-white p-2 rounded-lg shadow-sm border border-slate-200">
+                                    <div class="font-bold text-slate-700 text-sm truncate">${s.name}</div>
+                                    <div class="text-cyan-600 font-bold text-lg">${s.time.toFixed(2)}秒</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
         }
 
         function drawChart(responses, mode) { // Changed parameter name from 'data' to 'responses' to avoid conflict
@@ -7948,11 +8267,19 @@ appId: &quot;...&quot;"></textarea>
                 aiSummaryModal.classList.remove('hidden');
                 aiLoadingSpinner.classList.remove('hidden');
                 aiSummaryResultList.innerHTML = '';
-                const prompt = `請分析以下學生回答的文本內容，識別出語義上相似的詞語或短語，歸類為主要詞彙並統計總出現次數。列出最常出現的10個主要詞彙。請以繁體中文回應，排除常見助詞、連接詞、標點符號。使用JSON格式返回結果：[{"word": "主要詞彙1", "count": 10}]。若無有意義詞彙，返回空陣列[]。文本內容：\n${textResponses.join('\n\n')}`;
+                const prompt = `請分析以下學生回答的文本內容，識別出語義上相似的詞語或短語，歸類為主要詞彙並統計總出現次數。列出最常出現的10個主要詞彙。請以繁體中文回應，排除常見助詞、連接詞、標點符號。
+
+請使用以下JSON格式返回結果，只輸出JSON內容，不要有其他說明文字：
+[{"word": "主要詞彙1", "count": 10}, {"word": "主要詞彙2", "count": 8}]
+
+若無有意義詞彙，返回空陣列：[]
+
+文本內容：
+${textResponses.join('\n\n')}`;
                 try {
                     const payload = {
                         contents: [{ role: "user", parts: [{ text: prompt }] }],
-                        generationConfig: { responseMimeType: "application/json", responseSchema: { type: "ARRAY", items: { type: "OBJECT", properties: { "word": { "type": "STRING" }, "count": { "type": "NUMBER" } }, "propertyOrdering": ["word", "count"] } } }
+                        generationConfig: { temperature: 0.3 }
                     };
                     const apiKey = (aiSettings.aiSource === 'gemini-custom' && aiSettings.geminiApiKey) ? aiSettings.geminiApiKey : "";
                     const response = await fetch(getApiUrl(apiKey), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -7965,7 +8292,17 @@ appId: &quot;...&quot;"></textarea>
 
                     const result = await response.json();
                     aiLoadingSpinner.classList.add('hidden');
-                    const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    let jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    // Extract JSON from response text (in case there's extra text)
+                    if (jsonText) {
+                        // Try to find JSON array in the text
+                        const jsonMatch = jsonText.match(/\[[\s\S]*\]/);
+                        if (jsonMatch) {
+                            jsonText = jsonMatch[0];
+                        }
+                    }
+
                     const parsedResults = jsonText ? JSON.parse(jsonText) : [];
                     if (parsedResults.length > 0) {
                         parsedResults.sort((a, b) => b.count - a.count).forEach(item => {
@@ -9353,7 +9690,7 @@ appId: &quot;...&quot;"></textarea>
                 projectId: "demo",
                 storageBucket: "demo",
                 messagingSenderId: "demo",
-                appId: "demoV4.2"
+                appId: "demoV4.4"
             };
             // ============================================================================
 
