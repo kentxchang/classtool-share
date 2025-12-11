@@ -1378,7 +1378,7 @@
                 <div class="text-center mt-8">
                     <p class="text-xs text-slate-400">App ID: <span id="app-id-display"></span> &nbsp;&bull;&nbsp; User ID: <span id="user-id-display"></span></p>
                     <div class="mt-2 text-slate-400 text-sm">
-                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.4</a>
+                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.5</a>
                     </div>
                     <div class="mt-4 text-slate-500 text-xs max-w-2xl mx-auto px-4">
                         <p class="mb-2">
@@ -9619,7 +9619,7 @@ ${textResponses.join('\n\n')}`;
 
         /**
          * Setup Firebase configuration from various sources
-         * 優先順序：localStorage > URL 參數 > firebase-config.js > 原始碼硬編碼
+         * 優先順序：URL 參數 > localStorage > firebase-config.js > 原始碼硬編碼
          */
         async function setupFirebaseConfig() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -9627,8 +9627,8 @@ ${textResponses.join('\n\n')}`;
             let rawConfigString = localStorage.getItem('firebaseConfig');
             let configSource = "localStorage";
 
-            // Priority 1: Check URL parameter
-            if (!rawConfigString && configParam) {
+            // Priority 1: Check URL parameter (優先使用 URL 參數)
+            if (configParam) {
                 try {
                     rawConfigString = atob(configParam);
                     configSource = "URL";
@@ -9690,7 +9690,7 @@ ${textResponses.join('\n\n')}`;
                 projectId: "demo",
                 storageBucket: "demo",
                 messagingSenderId: "demo",
-                appId: "demoV4.4"
+                appId: "demoV4.5"
             };
             // ============================================================================
 
