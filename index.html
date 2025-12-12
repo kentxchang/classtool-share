@@ -1183,20 +1183,20 @@
             justify-content: center;
             font-size: 10px;
         }
-        #eraser-btn:hover, #reading-eraser-btn:hover {
+        #eraser-btn:hover, #reading-eraser-btn:hover, #reading-mouse-btn:hover {
             background-color: #f3f4f6;
             transform: scale(1.1);
         }
-        #eraser-btn.active, #reading-eraser-btn.active {
+        #eraser-btn.active, #reading-eraser-btn.active, #reading-mouse-btn.active {
             background-color: #374151;
             border-color: #374151;
             border-width: 3px;
             position: relative;
         }
-        #eraser-btn.active i, #reading-eraser-btn.active i {
+        #eraser-btn.active i, #reading-eraser-btn.active i, #reading-mouse-btn.active i {
             color: white;
         }
-        #eraser-btn.active::after, #reading-eraser-btn.active::after {
+        #eraser-btn.active::after, #reading-eraser-btn.active::after, #reading-mouse-btn.active::after {
             content: '✓';
             position: absolute;
             bottom: -2px;
@@ -1213,26 +1213,28 @@
 
         /* Highlighted text spans */
         .highlight {
-            padding: 2px 0;
+            padding: 2px 4px;
             border-radius: 3px;
             cursor: pointer;
             position: relative;
             transition: all 0.2s ease;
+            border: 1px solid #000;
+            display: inline;
         }
         .highlight:hover {
             opacity: 0.8;
         }
         .highlight.yellow {
-            background-color: rgba(254, 240, 138, 0.6);
+            background-color: rgba(254, 240, 138, 0.8);
         }
         .highlight.green {
-            background-color: rgba(134, 239, 172, 0.6);
+            background-color: rgba(134, 239, 172, 0.8);
         }
         .highlight.pink {
-            background-color: rgba(253, 164, 175, 0.6);
+            background-color: rgba(253, 164, 175, 0.8);
         }
         .highlight.blue {
-            background-color: rgba(147, 197, 253, 0.6);
+            background-color: rgba(147, 197, 253, 0.8);
         }
 
         /* Eraser mode cursor and hover effect */
@@ -1273,14 +1275,14 @@
 
         /* Larger touch targets for highlighter buttons on mobile */
         @media (hover: none) and (pointer: coarse) {
-            .highlighter-btn, #reading-eraser-btn {
+            .highlighter-btn, #reading-eraser-btn, #reading-mouse-btn {
                 min-width: 44px;
                 min-height: 44px;
                 touch-action: manipulation;
             }
 
             /* Improve touch feedback */
-            .highlighter-btn:active, #reading-eraser-btn:active {
+            .highlighter-btn:active, #reading-eraser-btn:active, #reading-mouse-btn:active {
                 transform: scale(0.95);
                 transition: transform 0.1s;
             }
@@ -1378,7 +1380,7 @@
                 <div class="text-center mt-8">
                     <p class="text-xs text-slate-400">App ID: <span id="app-id-display"></span> &nbsp;&bull;&nbsp; User ID: <span id="user-id-display"></span></p>
                     <div class="mt-2 text-slate-400 text-sm">
-                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.6</a>
+                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.7</a>
                     </div>
                     <div class="mt-4 text-slate-500 text-xs max-w-2xl mx-auto px-4">
                         <p class="mb-2">
@@ -2001,11 +2003,14 @@
                                     <button id="reading-eraser-btn" class="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-100" title="橡皮擦">
                                         <i class="fas fa-eraser"></i>
                                     </button>
+                                    <button id="reading-mouse-btn" class="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-100" title="滑鼠模式">
+                                        <i class="fas fa-mouse-pointer"></i>
+                                    </button>
                                 </div>
                             </div>
                             <div style="position: relative; flex: 1; min-height: 0; overflow-x: hidden;" class="bg-orange-50/50 rounded-xl border border-orange-100">
                                 <div id="reading-text-display" class="p-6 text-left text-base leading-loose whitespace-pre-wrap overflow-y-auto h-full text-slate-800" style="overflow-x: hidden; width: 100%;"></div>
-                                <canvas id="reading-highlight-canvas" style="position: absolute; top: 0; left: 0; pointer-events: none; border-radius: 0.75rem;"></canvas>
+                                <canvas id="reading-highlight-canvas" style="position: absolute; top: 0; left: 0; pointer-events: none; border-radius: 0.75rem; display: none;"></canvas>
                             </div>
                         </div>
                     </div>
@@ -9693,7 +9698,7 @@ ${textResponses.join('\n\n')}`;
                 projectId: "demo",
                 storageBucket: "demo",
                 messagingSenderId: "demo",
-                appId: "demoV4.6"
+                appId: "demoV4.7"
             };
             // ============================================================================
 
@@ -11288,12 +11293,14 @@ ${textResponses.join('\n\n')}`;
             // Setup highlighter buttons
             const highlighterBtns = document.querySelectorAll('.highlighter-btn');
             const eraserBtn = document.getElementById('reading-eraser-btn');
+            const mouseBtn = document.getElementById('reading-mouse-btn');
 
-            console.log('[Highlighter] Found buttons:', highlighterBtns.length, 'highlighters, eraser:', !!eraserBtn);
+            console.log('[Highlighter] Found buttons:', highlighterBtns.length, 'highlighters, eraser:', !!eraserBtn, 'mouse:', !!mouseBtn);
 
             // Remove previous active states
             highlighterBtns.forEach(btn => btn.classList.remove('active'));
             if (eraserBtn) eraserBtn.classList.remove('active');
+            if (mouseBtn) mouseBtn.classList.remove('active');
 
             // Remove old event listeners by cloning buttons
             highlighterBtns.forEach((btn, index) => {
@@ -11306,9 +11313,15 @@ ${textResponses.join('\n\n')}`;
                 eraserBtn.parentNode.replaceChild(newEraserBtn, eraserBtn);
             }
 
+            if (mouseBtn) {
+                const newMouseBtn = mouseBtn.cloneNode(true);
+                mouseBtn.parentNode.replaceChild(newMouseBtn, mouseBtn);
+            }
+
             // Re-query buttons after cloning
             const newHighlighterBtns = document.querySelectorAll('.highlighter-btn');
             const newEraserBtn = document.getElementById('reading-eraser-btn');
+            const newMouseBtn = document.getElementById('reading-mouse-btn');
 
             // Highlighter button click handlers
             newHighlighterBtns.forEach(btn => {
@@ -11322,11 +11335,13 @@ ${textResponses.join('\n\n')}`;
                     // Update button states
                     newHighlighterBtns.forEach(b => b.classList.remove('active'));
                     if (newEraserBtn) newEraserBtn.classList.remove('active');
+                    if (newMouseBtn) newMouseBtn.classList.remove('active');
                     btn.classList.add('active');
 
                     console.log('[Highlighter] Color activated:', color);
-                    highlightCanvas.style.pointerEvents = 'auto';
-                    highlightCanvas.style.cursor = 'crosshair';
+
+                    // Apply highlight to selected text if any
+                    applyHighlightToSelection(color);
                 });
             });
 
@@ -11339,21 +11354,38 @@ ${textResponses.join('\n\n')}`;
 
                     // Update button states
                     newHighlighterBtns.forEach(b => b.classList.remove('active'));
+                    if (newMouseBtn) newMouseBtn.classList.remove('active');
                     newEraserBtn.classList.add('active');
 
                     console.log('[Highlighter] Eraser mode activated');
-                    highlightCanvas.style.pointerEvents = 'auto';
-                    highlightCanvas.style.cursor = 'pointer';
+                    textDisplay.classList.add('eraser-mode');
+                });
+            }
+
+            // Mouse button click handler
+            if (newMouseBtn) {
+                newMouseBtn.addEventListener('click', () => {
+                    console.log('[Highlighter] Mouse button clicked');
+                    isEraserMode = false;
+                    currentHighlighterColor = null;
+
+                    // Update button states
+                    newHighlighterBtns.forEach(b => b.classList.remove('active'));
+                    if (newEraserBtn) newEraserBtn.classList.remove('active');
+                    newMouseBtn.classList.add('active');
+
+                    console.log('[Highlighter] Mouse mode activated');
+                    textDisplay.classList.remove('eraser-mode');
                 });
             }
 
             // Detect text lines
             detectTextLines();
 
-            // Setup drawing events
-            setupDrawingEvents();
+            // Setup text selection and highlight events
+            setupTextHighlightEvents();
 
-            console.log('[Highlighter] Initialization complete with drawing mode');
+            console.log('[Highlighter] Initialization complete with text selection mode');
         }
 
         /**
@@ -11440,6 +11472,92 @@ ${textResponses.join('\n\n')}`;
 
             textLines.sort((a, b) => a.y - b.y);
             console.log('[Highlighter] Detected', textLines.length, 'text lines');
+        }
+
+        /**
+         * Apply highlight to selected text
+         */
+        function applyHighlightToSelection(color) {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed) {
+                console.log('[Highlighter] No text selected');
+                return;
+            }
+
+            const range = selection.getRangeAt(0);
+            const textDisplay = document.getElementById('reading-text-display');
+
+            // Check if selection is within the text display
+            if (!textDisplay.contains(range.commonAncestorContainer)) {
+                console.log('[Highlighter] Selection is not in text display');
+                return;
+            }
+
+            try {
+                // Create a span to wrap the selected text
+                const span = document.createElement('span');
+                span.className = `highlight ${color}`;
+                span.setAttribute('data-highlight-color', color);
+
+                // Wrap the selected content
+                range.surroundContents(span);
+
+                console.log('[Highlighter] Applied', color, 'highlight to selected text');
+
+                // Clear the selection
+                selection.removeAllRanges();
+            } catch (error) {
+                // If surroundContents fails (e.g., partial element selection),
+                // use a more robust method
+                console.log('[Highlighter] Using alternative highlight method');
+
+                const fragment = range.extractContents();
+                const span = document.createElement('span');
+                span.className = `highlight ${color}`;
+                span.setAttribute('data-highlight-color', color);
+                span.appendChild(fragment);
+                range.insertNode(span);
+
+                // Clear the selection
+                selection.removeAllRanges();
+            }
+        }
+
+        /**
+         * Setup text selection and highlight events
+         */
+        function setupTextHighlightEvents() {
+            const textDisplay = document.getElementById('reading-text-display');
+            if (!textDisplay) return;
+
+            // Listen for mouseup to apply highlight when text is selected
+            textDisplay.addEventListener('mouseup', () => {
+                if (currentHighlighterColor && !isEraserMode) {
+                    setTimeout(() => {
+                        applyHighlightToSelection(currentHighlighterColor);
+                    }, 10);
+                }
+            });
+
+            // Listen for click on highlights in eraser mode
+            textDisplay.addEventListener('click', (e) => {
+                if (isEraserMode && e.target.classList.contains('highlight')) {
+                    console.log('[Highlighter] Removing highlight');
+                    const highlight = e.target;
+                    const parent = highlight.parentNode;
+
+                    // Replace the highlight span with its text content
+                    while (highlight.firstChild) {
+                        parent.insertBefore(highlight.firstChild, highlight);
+                    }
+                    parent.removeChild(highlight);
+
+                    // Normalize the parent to merge adjacent text nodes
+                    parent.normalize();
+                }
+            });
+
+            console.log('[Highlighter] Text selection events setup complete');
         }
 
         /**
