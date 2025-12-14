@@ -486,6 +486,26 @@
             align-items: stretch;
         }
 
+        /* 專注力遊戲設定模態框樣式 */
+        #focus-game-settings-modal-content {
+            max-width: 600px;
+            width: 90%;
+        }
+
+        /* 專注力遊戲數字選項的選中狀態 */
+        .focus-game-number-option.selected {
+            background-color: #06b6d4 !important;
+            border-color: #0891b2 !important;
+        }
+
+        .focus-game-number-option.selected .text-cyan-700 {
+            color: white !important;
+        }
+
+        .focus-game-number-option.selected .text-gray-600 {
+            color: #e0f2fe !important;
+        }
+
         /* 查看題目模態框樣式 */
         #view-questions-modal-content {
             max-width: 60% !important;
@@ -1386,7 +1406,7 @@
                         </span>
                     </p>
                     <div class="mt-2 text-slate-400 text-sm">
-                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.7</a>
+                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.8</a>
                     </div>
                     <div class="mt-4 text-slate-500 text-xs max-w-2xl mx-auto px-4">
                         <p class="mb-2">
@@ -1510,7 +1530,7 @@
                     </div>
                     <span class="font-bold text-slate-700 text-lg">便利貼牆</span>
                 </button>
-                <button data-mode="focus_game" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
+                <button id="focus-game-settings-btn" class="landing-card hover:scale-105 transition transform duration-200 !p-6 flex flex-col items-center justify-center gap-3 group">
                     <div class="w-14 h-14 rounded-2xl bg-cyan-100 text-cyan-600 flex items-center justify-center text-2xl group-hover:bg-cyan-600 group-hover:text-white transition">
                         <i class="fas fa-brain"></i>
                     </div>
@@ -2705,6 +2725,45 @@ appId: &quot;...&quot;"></textarea>
         </div>
     </div>
 
+    <!-- 專注力遊戲設定模態框 -->
+    <div id="focus-game-settings-modal" class="magnified-image-modal hidden">
+        <div id="focus-game-settings-modal-content" class="magnified-image-modal-content">
+            <button id="focus-game-settings-modal-close-btn" class="magnified-image-modal-close">×</button>
+            <div class="w-full">
+                <h4 class="text-2xl font-bold mb-4 text-cyan-800 flex items-center justify-center gap-2">
+                    <i class="fas fa-brain"></i> 專注力遊戲設定
+                </h4>
+
+                <div class="bg-gradient-to-br from-cyan-50 to-blue-50 p-6 rounded-lg border-2 border-cyan-200">
+                    <label class="block text-gray-700 text-lg font-bold mb-4">選擇數字數量：</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button class="focus-game-number-option bg-white hover:bg-cyan-100 border-2 border-cyan-300 hover:border-cyan-500 rounded-xl p-6 text-center transition transform hover:scale-105 active:scale-95" data-number="9">
+                            <div class="text-4xl font-bold text-cyan-700 mb-2">9</div>
+                            <div class="text-sm text-gray-600">3×3 格子</div>
+                        </button>
+                        <button class="focus-game-number-option bg-white hover:bg-cyan-100 border-2 border-cyan-300 hover:border-cyan-500 rounded-xl p-6 text-center transition transform hover:scale-105 active:scale-95" data-number="16">
+                            <div class="text-4xl font-bold text-cyan-700 mb-2">16</div>
+                            <div class="text-sm text-gray-600">4×4 格子</div>
+                        </button>
+                        <button class="focus-game-number-option bg-white hover:bg-cyan-100 border-2 border-cyan-300 hover:border-cyan-500 rounded-xl p-6 text-center transition transform hover:scale-105 active:scale-95" data-number="25">
+                            <div class="text-4xl font-bold text-cyan-700 mb-2">25</div>
+                            <div class="text-sm text-gray-600">5×5 格子</div>
+                        </button>
+                        <button class="focus-game-number-option bg-white hover:bg-cyan-100 border-2 border-cyan-300 hover:border-cyan-500 rounded-xl p-6 text-center transition transform hover:scale-105 active:scale-95 selected" data-number="36">
+                            <div class="text-4xl font-bold text-cyan-700 mb-2">36</div>
+                            <div class="text-sm text-gray-600">6×6 格子（預設）</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-button-group mt-6">
+                    <button id="start-focus-game-interaction-btn" class="btn bg-cyan-500 hover:bg-cyan-600">確認並開始互動 🚀</button>
+                    <button id="cancel-focus-game-settings-btn" class="btn btn-gray">取消 ↩️</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 教師密碼驗證模態框 -->
     <div id="teacher-password-modal" class="magnified-image-modal hidden">
         <div id="teacher-password-modal-content" class="magnified-image-modal-content">
@@ -3342,10 +3401,8 @@ appId: &quot;...&quot;"></textarea>
                     currentMatchingSelection.rightItem = null;
                     break;
                 case 'focus_game':
-                    // Reset focus game state
-                    if (!isResumingFromPause) {
-                        initializeFocusGame();
-                    }
+                    // Focus game initialization is handled in listenToInteractionMode
+                    // to ensure we use the correct numberCount from Firebase
                     break;
                 case 'reading_comprehension':
                     // Only clear content if not resuming from pause
@@ -4146,6 +4203,15 @@ appId: &quot;...&quot;"></textarea>
                     payload.readingComprehensionData = null;
                 }
 
+                // NEW: Add focus game settings if in that mode
+                if (mode === 'focus_game' && options.numberCount) {
+                    payload.focusGameSettings = {
+                        numberCount: options.numberCount
+                    };
+                } else {
+                    payload.focusGameSettings = null;
+                }
+
                 await setDoc(controlRef, payload, { merge: true });
 
                 // Handle student responses listener based on mode
@@ -4310,6 +4376,14 @@ appId: &quot;...&quot;"></textarea>
                             if (modeChanged) {
                                 document.getElementById('submit-reading-btn').disabled = false;
                             }
+                        }
+                    } else if (currentInteractionMode === 'focus_game') {
+                        const focusGameSettings = data.focusGameSettings;
+                        if (focusGameSettings && modeChanged) {
+                            initializeFocusGame(focusGameSettings.numberCount);
+                        } else if (modeChanged) {
+                            // Use default if no settings provided
+                            initializeFocusGame(36);
                         }
                     } else if (currentInteractionMode === 'quick_poll') {
                         if (modeChanged) {
@@ -5642,14 +5716,18 @@ appId: &quot;...&quot;"></textarea>
             timerInterval: null
         };
 
-        function initializeFocusGame() {
+        function initializeFocusGame(numberCount = 36) {
+            // Calculate grid size (e.g., 9->3, 16->4, 25->5, 36->6)
+            const gridSize = Math.sqrt(numberCount);
+
             // Reset game state
             focusGameState = {
-                numbers: shuffleArray([...Array(36)].map((_, i) => i + 1)),
+                numbers: shuffleArray([...Array(numberCount)].map((_, i) => i + 1)),
                 currentNumber: 1,
                 startTime: null,
                 isPlaying: false,
-                timerInterval: null
+                timerInterval: null,
+                totalNumbers: numberCount
             };
 
             // Show instructions, hide timer and completion
@@ -5657,10 +5735,13 @@ appId: &quot;...&quot;"></textarea>
             document.getElementById('focus-game-timer').classList.add('hidden');
             document.getElementById('focus-game-complete').classList.add('hidden');
 
-            // Generate 6x6 grid
+            // Generate grid with dynamic columns
             const grid = document.getElementById('focus-game-grid');
             grid.classList.remove('hidden'); // Show the grid
             grid.innerHTML = '';
+            // Set dynamic grid columns based on grid size
+            grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+
             focusGameState.numbers.forEach((num, index) => {
                 const cell = document.createElement('button');
                 cell.className = 'focus-game-cell w-full aspect-square bg-gradient-to-br from-cyan-100 to-blue-100 hover:from-cyan-200 hover:to-blue-200 rounded-xl shadow-md border-2 border-cyan-300 text-3xl font-bold text-cyan-700 transition transform hover:scale-105 active:scale-95';
@@ -5705,7 +5786,7 @@ appId: &quot;...&quot;"></textarea>
                 document.getElementById('focus-next-number').textContent = focusGameState.currentNumber;
 
                 // Check if game is complete
-                if (focusGameState.currentNumber > 36) {
+                if (focusGameState.currentNumber > focusGameState.totalNumbers) {
                     completeFocusGame();
                 }
             } else if (focusGameState.isPlaying) {
@@ -8424,6 +8505,44 @@ ${textResponses.join('\n\n')}`;
                 });
             });
 
+            // Focus Game Settings Modal listeners
+            let selectedFocusGameNumber = 36; // Default number
+
+            document.getElementById('focus-game-settings-btn').addEventListener('click', () => {
+                document.getElementById('focus-game-settings-modal').classList.remove('hidden');
+            });
+
+            document.getElementById('focus-game-settings-modal-close-btn').addEventListener('click', () => {
+                document.getElementById('focus-game-settings-modal').classList.add('hidden');
+            });
+
+            document.getElementById('cancel-focus-game-settings-btn').addEventListener('click', () => {
+                document.getElementById('focus-game-settings-modal').classList.add('hidden');
+            });
+
+            // Handle number option selection
+            document.querySelectorAll('.focus-game-number-option').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    // Remove selected class from all buttons
+                    document.querySelectorAll('.focus-game-number-option').forEach(btn => {
+                        btn.classList.remove('selected');
+                    });
+                    // Add selected class to clicked button
+                    e.currentTarget.classList.add('selected');
+                    // Store the selected number
+                    selectedFocusGameNumber = parseInt(e.currentTarget.dataset.number);
+                });
+            });
+
+            // Start focus game interaction
+            document.getElementById('start-focus-game-interaction-btn').addEventListener('click', async () => {
+                document.getElementById('focus-game-settings-modal').classList.add('hidden');
+                showView('teacherMonitor');
+                await setInteractionMode('focus_game', {
+                    numberCount: selectedFocusGameNumber
+                });
+            });
+
             // Quick Poll Settings Modal listeners
             document.getElementById('quick-poll-settings-btn').addEventListener('click', showQuickPollSettingsModal);
             document.getElementById('quick-poll-settings-modal-close-btn').addEventListener('click', hideQuickPollSettingsModal);
@@ -9730,7 +9849,7 @@ ${textResponses.join('\n\n')}`;
                 projectId: "demo",
                 storageBucket: "demo",
                 messagingSenderId: "demo",
-                appId: "demoV4.7"
+                appId: "demoV4.8"
             };
             // ============================================================================
 
