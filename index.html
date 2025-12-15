@@ -1315,6 +1315,67 @@
             }
         }
 
+        /* Fix reading comprehension layout on mobile */
+        @media (max-width: 1023px) {
+            /* Reduce padding on main container */
+            #interaction-reading-comprehension {
+                padding: 0.75rem 0 !important;
+            }
+
+            /* Reduce header margin */
+            #interaction-reading-comprehension > div:first-child {
+                margin-bottom: 0.75rem !important;
+            }
+
+            /* Force proper height distribution on mobile */
+            #interaction-reading-comprehension > div:nth-child(2) {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 0.75rem !important;
+            }
+
+            /* Text content section - fixed height */
+            #interaction-reading-comprehension > div:nth-child(2) > div:first-child {
+                flex: 0 0 auto !important;
+                height: 42vh !important;
+                min-height: 42vh !important;
+                max-height: 42vh !important;
+            }
+
+            /* Questions section - take remaining space */
+            #interaction-reading-comprehension > div:nth-child(2) > div:last-child {
+                flex: 1 1 auto !important;
+                min-height: 0 !important;
+            }
+
+            /* Reduce padding on white cards */
+            #interaction-reading-comprehension .bg-white.rounded-2xl {
+                padding: 1rem !important;
+                height: 100% !important;
+            }
+
+            /* Reduce title margin */
+            #interaction-reading-comprehension h4 {
+                margin-bottom: 0.5rem !important;
+                font-size: 1rem !important;
+            }
+
+            /* Ensure text display fills its container */
+            #reading-text-display {
+                height: 100% !important;
+                overflow-y: auto !important;
+                padding: 1rem !important;
+                font-size: 0.875rem !important;
+                line-height: 1.6 !important;
+            }
+
+            /* Smaller highlighter tools on mobile */
+            .highlighter-btn, #reading-eraser-btn, #reading-mouse-btn {
+                width: 2rem !important;
+                height: 2rem !important;
+            }
+        }
+
         /* Disable pull-to-refresh on iOS/iPadOS */
         body {
             overscroll-behavior-y: none;
@@ -1406,7 +1467,7 @@
                         </span>
                     </p>
                     <div class="mt-2 text-slate-400 text-sm">
-                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.8</a>
+                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.9</a>
                     </div>
                     <div class="mt-4 text-slate-500 text-xs max-w-2xl mx-auto px-4">
                         <p class="mb-2">
@@ -7261,7 +7322,7 @@ appId: &quot;...&quot;"></textarea>
                     tempCanvas.width = width;
                     tempCanvas.height = height;
                     tempCtx.drawImage(img, 0, 0, width, height);
-                    const dataUrl = tempCanvas.toDataURL('image/jpeg', JPEG_QUALITY);
+                    const dataUrl = tempCanvas.toDataURL('image/png');
 
                     if (isTeacher) {
                         teacherUploadedBackgroundImageDataURL = dataUrl;
@@ -7345,7 +7406,7 @@ appId: &quot;...&quot;"></textarea>
                     tempCanvas.width = width;
                     tempCanvas.height = height;
                     tempCtx.drawImage(img, 0, 0, width, height);
-                    const dataUrl = tempCanvas.toDataURL('image/jpeg', JPEG_QUALITY);
+                    const dataUrl = tempCanvas.toDataURL('image/png');
 
                     teacherUploadedBackgroundImageDataURL = dataUrl;
                     document.getElementById(statusId).textContent = '已上傳背景圖片。可選擇檔案或直接貼上(Ctrl+V)。';
@@ -7796,8 +7857,8 @@ appId: &quot;...&quot;"></textarea>
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, width, height);
 
-                            // Convert to JPEG with compression
-                            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                            // Convert to PNG to preserve transparency
+                            const compressedDataUrl = canvas.toDataURL('image/png');
                             resolve(compressedDataUrl);
                         };
                         img.onerror = reject;
@@ -8086,7 +8147,7 @@ appId: &quot;...&quot;"></textarea>
                     showMessage('老師已暫停回覆，無法送出答案。', 'error');
                     return;
                 }
-                const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+                const dataUrl = canvas.toDataURL('image/png');
                 await submitAnswer(dataUrl);
                 e.currentTarget.disabled = true;
                 e.currentTarget.classList.replace('btn-primary', 'btn-gray');
@@ -9849,7 +9910,7 @@ ${textResponses.join('\n\n')}`;
                 projectId: "demo",
                 storageBucket: "demo",
                 messagingSenderId: "demo",
-                appId: "demoV4.8"
+                appId: "demoV4.9"
             };
             // ============================================================================
 
