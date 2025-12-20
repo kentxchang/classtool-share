@@ -161,6 +161,7 @@
             justify-content: flex-start; /* 將內容向上對齊 */
             text-align: left; /* 將文本向左對齊 */
             transition: border 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* Add transition for smooth border change */
+            position: relative; /* Allow absolute positioning of star button */
         }
         .student-response-item .name-box {
             background-color: #d1e7dd; /* Light green for name */
@@ -1467,7 +1468,7 @@
                         </span>
                     </p>
                     <div class="mt-2 text-slate-400 text-sm">
-                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.9</a>
+                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.9.1</a>
                     </div>
                     <div class="mt-4 text-slate-500 text-xs max-w-2xl mx-auto px-4">
                         <p class="mb-2">
@@ -1771,6 +1772,22 @@
                 </div>
             </div>
 
+            <!-- Student Responses Control Bar -->
+            <div id="responses-control-bar" class="hidden bg-white p-3 rounded-t-2xl border border-slate-200 border-b-0">
+                <div class="flex justify-center gap-2 flex-wrap">
+                    <button id="responses-sort-by-name" class="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-xs">
+                        <i class="fas fa-user mr-1"></i>按姓名
+                    </button>
+                    <button id="responses-sort-by-time" class="px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-xs shadow-sm">
+                        <i class="fas fa-clock mr-1"></i>按時間
+                    </button>
+                    <div class="w-px h-6 bg-slate-300 mx-1"></div>
+                    <button id="responses-toggle-starred-filter" class="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-xs">
+                        <i class="fas fa-star mr-1"></i>全部
+                    </button>
+                </div>
+            </div>
+
             <div id="student-responses-container" class="bg-slate-100 p-6 rounded-2xl border border-slate-200 h-[calc(100vh-180px)] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 content-start">
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-slate-400">
                     <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
@@ -1784,6 +1801,22 @@
                         <span class="w-8 h-8 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center text-sm"><i class="fas fa-chart-simple"></i></span>
                         即時投票統計
                     </h3>
+                    <!-- Sorting and filtering buttons for student works -->
+                    <div class="flex justify-center gap-2 mb-4 flex-wrap">
+                        <button id="sort-by-votes" class="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium text-sm shadow-sm">
+                            <i class="fas fa-heart mr-1"></i>按票數排序
+                        </button>
+                        <button id="sort-by-name" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-sm">
+                            <i class="fas fa-user mr-1"></i>按姓名排序
+                        </button>
+                        <button id="sort-by-time" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-sm">
+                            <i class="fas fa-clock mr-1"></i>按回傳時間排序
+                        </button>
+                        <div class="w-px h-8 bg-slate-300 mx-1"></div>
+                        <button id="toggle-starred-filter" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-sm">
+                            <i class="fas fa-star mr-1"></i>顯示全部作品
+                        </button>
+                    </div>
                     <div id="peer-review-stats-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         <p class="text-slate-400 text-center col-span-full py-8">尚未開始互評...</p>
                     </div>
@@ -3110,6 +3143,11 @@ appId: &quot;...&quot;"></textarea>
         let classroomCode = null; // NEW: Stores the teacher-defined or student-entered classroom code.
         let currentInteractionMode = null; // To track the active mode for statistics.
         let allStudentResponses = []; // Global variable to store all student responses for charting and lottery.
+        let currentSortMethod = 'votes'; // Track current sorting method for peer review: 'votes', 'name', or 'time'
+        let starredWorks = new Set(); // Track starred works by workId
+        let showOnlyStarred = false; // Track if showing only starred works in peer review
+        let responsesSortMethod = 'time'; // Track sorting method for regular responses: 'name' or 'time'
+        let responsesShowOnlyStarred = false; // Track if showing only starred works in regular responses
         let activeStudentNames = []; // NEW: Global variable to store names of all currently active students.
         let lastSelectedStudentCard = null; // To track the previously selected card for the lottery feature.
         let isResponsePaused = false; // NEW: Global state for response pause.
@@ -4157,6 +4195,10 @@ appId: &quot;...&quot;"></textarea>
 
                 // Clear saved canvas state for new interaction
                 savedCanvasState = null;
+
+                // Don't clear starred works here - keep them across peer review sessions
+                // Only reset the filter to show all works
+                showOnlyStarred = false;
             }
             downloadMediaBtn.classList.toggle('hidden', mode !== 'drawing' && mode !== 'recording');
             aiTextSummaryBtn.classList.toggle('hidden', mode !== 'text_input');
@@ -4603,6 +4645,11 @@ appId: &quot;...&quot;"></textarea>
         function listenToStudentSubmissions(mode) {
              if (studentResponsesUnsubscribe) studentResponsesUnsubscribe();
 
+             // Load starred works for this interaction
+             loadStarredWorks();
+             responsesShowOnlyStarred = false; // Reset filter
+             updateResponsesFilterButton();
+
              // Use classroomCode in the Firestore path
              const studentsColRef = collection(db, 'artifacts', baseAppId, 'public', 'data', 'classrooms', classroomCode, 'studentResponses');
              const container = document.getElementById('student-responses-container');
@@ -4659,10 +4706,47 @@ appId: &quot;...&quot;"></textarea>
                     return;
                 }
                 
-                let responses = []; 
+                let responses = [];
                 querySnapshot.forEach((doc) => {
                     const student = doc.data();
                     responses.push(student);
+                });
+
+                // Apply sorting
+                if (responsesSortMethod === 'name') {
+                    responses.sort((a, b) => a.name.localeCompare(b.name, 'zh-TW'));
+                } else {
+                    // Sort by timestamp (most recent first) - default
+                    responses.sort((a, b) => {
+                        const timeA = a.timestamp || 0;
+                        const timeB = b.timestamp || 0;
+                        return timeB - timeA;
+                    });
+                }
+
+                // Apply starred filter
+                if (responsesShowOnlyStarred) {
+                    responses = responses.filter(student => {
+                        const workId = `${student.name}-${student.timestamp || responses.indexOf(student)}`;
+                        return starredWorks.has(workId);
+                    });
+                }
+
+                // Show control bar when there are responses
+                const controlBar = document.getElementById('responses-control-bar');
+                if (responses.length > 0 && mode !== 'word_cloud' && mode !== 'sticky_note' && mode !== 'focus_game') {
+                    controlBar.classList.remove('hidden');
+                    // Adjust container to only have bottom rounded corners
+                    container.classList.remove('rounded-2xl');
+                    container.classList.add('rounded-b-2xl');
+                } else {
+                    controlBar.classList.add('hidden');
+                    // Restore full rounded corners
+                    container.classList.remove('rounded-b-2xl');
+                    container.classList.add('rounded-2xl');
+                }
+
+                responses.forEach((student, index) => {
                     const card = document.createElement('div');
                     card.className = 'student-response-item'; 
 
@@ -4796,14 +4880,30 @@ appId: &quot;...&quot;"></textarea>
                     else { // Default multiple choice (1-4)
                         answerContentHTML = `<p class="text-2xl font-bold text-blue-600">${student.answer}</p>`;
                     }
-                    
+
+                    // Create work ID for starring
+                    const workId = `${student.name}-${student.timestamp || index}`;
+                    const isStarred = starredWorks.has(workId);
+
                     card.innerHTML = `
+                        <button class="responses-star-toggle-btn absolute top-1 right-1 w-6 h-6 rounded-full ${isStarred ? 'bg-yellow-400 text-white' : 'bg-white/80 text-slate-400'} hover:bg-yellow-400 hover:text-white transition-all shadow-sm z-10" data-work-id="${workId}" data-tooltip="${isStarred ? '取消星號' : '加入星號'}">
+                            <i class="fas fa-star text-xs"></i>
+                        </button>
                         <div class="name-box">${student.name}</div>
                         <div class="answer-box">
                             ${answerContentHTML}
                         </div>
                     `;
                     container.appendChild(card);
+
+                    // Add star button event listener
+                    const starBtn = card.querySelector('.responses-star-toggle-btn');
+                    if (starBtn) {
+                        starBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            toggleStarWork(starBtn.dataset.workId);
+                        });
+                    }
 
                     if (mode === 'drawing') {
                         const imgElement = card.querySelector('.answer-box img');
@@ -8287,6 +8387,40 @@ appId: &quot;...&quot;"></textarea>
             
             // NEW: Exit Peer Review Button (Student)
             document.getElementById('exit-peer-review-btn').addEventListener('click', exitPeerReview);
+
+            // NEW: Sorting buttons for peer review stats
+            document.getElementById('sort-by-votes').addEventListener('click', () => {
+                currentSortMethod = 'votes';
+                updateSortButtonStyles();
+                updateTeacherVoteStats(allPeerReviewVotes, currentSortMethod);
+            });
+            document.getElementById('sort-by-name').addEventListener('click', () => {
+                currentSortMethod = 'name';
+                updateSortButtonStyles();
+                updateTeacherVoteStats(allPeerReviewVotes, currentSortMethod);
+            });
+            document.getElementById('sort-by-time').addEventListener('click', () => {
+                currentSortMethod = 'time';
+                updateSortButtonStyles();
+                updateTeacherVoteStats(allPeerReviewVotes, currentSortMethod);
+            });
+
+            // NEW: Starred filter toggle button
+            document.getElementById('toggle-starred-filter').addEventListener('click', toggleStarredFilter);
+
+            // NEW: Regular responses sorting and filtering buttons
+            document.getElementById('responses-sort-by-name').addEventListener('click', () => {
+                responsesSortMethod = 'name';
+                updateResponsesSortButtonStyles();
+                refreshStudentResponsesDisplay();
+            });
+            document.getElementById('responses-sort-by-time').addEventListener('click', () => {
+                responsesSortMethod = 'time';
+                updateResponsesSortButtonStyles();
+                refreshStudentResponsesDisplay();
+            });
+            document.getElementById('responses-toggle-starred-filter').addEventListener('click', toggleResponsesStarredFilter);
+
             chartModalCloseBtn.addEventListener('click', hideStatisticsModal);
             magnifiedImageModalCloseBtn.addEventListener('click', hideMagnifiedDrawing);
             magnifiedImageModal.addEventListener('click', (e) => { if (e.target === magnifiedImageModal) hideMagnifiedDrawing(); });
@@ -9406,13 +9540,22 @@ ${textResponses.join('\n\n')}`;
                     
                     peerReviewActive = true;
                     showMessage('互評已開始！學生可以開始觀摩投票。', 'success');
-                    
+
                     // Show voting statistics container
                     document.getElementById('peer-review-stats-container').classList.remove('hidden');
-                    
+
+                    // Reset sorting to default (votes)
+                    currentSortMethod = 'votes';
+                    updateSortButtonStyles();
+
+                    // Load starred works from localStorage
+                    loadStarredWorks();
+                    showOnlyStarred = false; // Reset filter to show all works
+                    updateStarredFilterButton();
+
                     // Start listening for votes
                     listenToPeerReviewVotes();
-                    
+
                     // Update button text
                     startPeerReviewBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> 停止互評 ⏹️';
                     
@@ -9629,7 +9772,7 @@ ${textResponses.join('\n\n')}`;
                 
                 // Update teacher UI
                 if (currentRole === 'teacher' && !document.getElementById('peer-review-stats-container').classList.contains('hidden')) {
-                    updateTeacherVoteStats(votes);
+                    updateTeacherVoteStats(votes, currentSortMethod);
                 }
             });
         }
@@ -9700,33 +9843,73 @@ ${textResponses.join('\n\n')}`;
 
         /**
          * Updates the teacher's vote statistics display.
+         * @param {Object} votes - The votes object
+         * @param {string} sortMethod - The sorting method: 'votes', 'name', or 'time'
          */
-        function updateTeacherVoteStats(votes) {
+        function updateTeacherVoteStats(votes, sortMethod = 'votes') {
             const statsGrid = document.getElementById('peer-review-stats-grid');
             statsGrid.innerHTML = '';
-            
-            // Sort works by vote count (descending)
-            const sortedWorks = allStudentResponses.map(work => {
+
+            // Map works with their IDs and votes
+            let worksWithData = allStudentResponses.map(work => {
                 const workId = `${work.name}-${work.timestamp || allStudentResponses.indexOf(work)}`;
                 return {
                     ...work,
                     workId: workId,
                     votes: votes[workId] || 0
                 };
-            }).sort((a, b) => b.votes - a.votes);
-            
+            });
+
+            // Filter works if showing only starred
+            if (showOnlyStarred) {
+                worksWithData = worksWithData.filter(work => starredWorks.has(work.workId));
+            }
+
+            // Sort works based on the selected method
+            let sortedWorks;
+            switch(sortMethod) {
+                case 'name':
+                    // Sort by name alphabetically
+                    sortedWorks = worksWithData.sort((a, b) => a.name.localeCompare(b.name, 'zh-TW'));
+                    break;
+                case 'time':
+                    // Sort by timestamp (most recent first)
+                    sortedWorks = worksWithData.sort((a, b) => {
+                        const timeA = a.timestamp || 0;
+                        const timeB = b.timestamp || 0;
+                        return timeB - timeA;
+                    });
+                    break;
+                case 'votes':
+                default:
+                    // Sort by vote count (descending)
+                    sortedWorks = worksWithData.sort((a, b) => b.votes - a.votes);
+                    break;
+            }
+
+            if (sortedWorks.length === 0) {
+                statsGrid.innerHTML = '<p class="text-slate-400 text-center col-span-full py-8">沒有符合條件的作品...</p>';
+                return;
+            }
+
             sortedWorks.forEach((work, index) => {
                 const statsDiv = document.createElement('div');
-                statsDiv.className = 'vote-stats-item';
-                
+                statsDiv.className = 'vote-stats-item relative';
+                statsDiv.dataset.workId = work.workId;
+
+                const isStarred = starredWorks.has(work.workId);
+
                 let contentHtml = '';
                 if (currentInteractionMode === 'drawing') {
                     contentHtml = `<img src="${work.answer}" alt="學生作品">`;
                 } else {
                     contentHtml = `<p>${work.answer}</p>`;
                 }
-                
+
                 statsDiv.innerHTML = `
+                    <button class="star-toggle-btn absolute top-2 right-2 w-8 h-8 rounded-full ${isStarred ? 'bg-yellow-400 text-white' : 'bg-white/80 text-slate-400'} hover:bg-yellow-400 hover:text-white transition-all shadow-sm z-10" data-work-id="${work.workId}" data-tooltip="${isStarred ? '取消星號' : '加入星號'}">
+                        <i class="fas fa-star"></i>
+                    </button>
                     <div class="stats-author">${work.name}</div>
                     <div class="stats-content">${contentHtml}</div>
                     <div class="stats-votes">
@@ -9734,9 +9917,290 @@ ${textResponses.join('\n\n')}`;
                         <span class="vote-count ${work.votes === 0 ? 'zero' : ''}">${work.votes}</span>
                     </div>
                 `;
-                
+
                 statsGrid.appendChild(statsDiv);
             });
+
+            // Add event listeners to star buttons
+            document.querySelectorAll('.star-toggle-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleStarWork(btn.dataset.workId);
+                });
+            });
+        }
+
+        /**
+         * Updates the styling of sort buttons based on current sort method.
+         */
+        function updateSortButtonStyles() {
+            const sortByVotesBtn = document.getElementById('sort-by-votes');
+            const sortByNameBtn = document.getElementById('sort-by-name');
+            const sortByTimeBtn = document.getElementById('sort-by-time');
+
+            // Reset all buttons to default style
+            [sortByVotesBtn, sortByNameBtn, sortByTimeBtn].forEach(btn => {
+                btn.className = 'px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-sm';
+            });
+
+            // Highlight the active button
+            const activeClasses = 'px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium text-sm shadow-sm';
+            switch(currentSortMethod) {
+                case 'votes':
+                    sortByVotesBtn.className = activeClasses;
+                    break;
+                case 'name':
+                    sortByNameBtn.className = activeClasses;
+                    break;
+                case 'time':
+                    sortByTimeBtn.className = activeClasses;
+                    break;
+            }
+        }
+
+        /**
+         * Toggles the star status for a work.
+         * @param {string} workId - The ID of the work to toggle
+         */
+        function toggleStarWork(workId) {
+            if (starredWorks.has(workId)) {
+                starredWorks.delete(workId);
+            } else {
+                starredWorks.add(workId);
+            }
+
+            // Save to localStorage
+            saveStarredWorks();
+
+            // Update display based on current view
+            if (!document.getElementById('peer-review-stats-container').classList.contains('hidden')) {
+                // Update peer review stats display
+                updateTeacherVoteStats(allPeerReviewVotes, currentSortMethod);
+                updateStarredFilterButton();
+            } else {
+                // Update regular responses display
+                refreshStudentResponsesDisplay();
+                updateResponsesFilterButton();
+            }
+        }
+
+        /**
+         * Refresh the student responses display with current sort and filter settings.
+         */
+        function refreshStudentResponsesDisplay() {
+            if (!currentInteractionMode || allStudentResponses.length === 0) return;
+
+            const container = document.getElementById('student-responses-container');
+            const mode = currentInteractionMode;
+
+            // Re-trigger the display logic
+            // We'll use the cached allStudentResponses data
+            container.innerHTML = '';
+
+            let responses = [...allStudentResponses];
+
+            // Apply sorting
+            if (responsesSortMethod === 'name') {
+                responses.sort((a, b) => a.name.localeCompare(b.name, 'zh-TW'));
+            } else {
+                responses.sort((a, b) => {
+                    const timeA = a.timestamp || 0;
+                    const timeB = b.timestamp || 0;
+                    return timeB - timeA;
+                });
+            }
+
+            // Apply starred filter
+            if (responsesShowOnlyStarred) {
+                responses = responses.filter(student => {
+                    const workId = `${student.name}-${student.timestamp}`;
+                    return starredWorks.has(workId);
+                });
+            }
+
+            if (responses.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-center col-span-full py-8">沒有符合條件的作品...</p>';
+                return;
+            }
+
+            // This triggers a manual refresh by temporarily storing responses and calling render
+            // Since the full render logic is in listenToStudentSubmissions, we'll need to
+            // manually recreate the cards here (code duplication, but necessary)
+
+            // Simplified approach: just trigger a re-render by modifying a dummy field
+            // But that won't work with onSnapshot...
+
+            // Better approach: extract card rendering to a separate function
+            // For now, let's just note that the next onSnapshot will pick up the changes
+            // OR we can force a refresh by calling listenToStudentSubmissions again
+
+            // Simplest approach: Wait for the next Firebase update
+            // But we want immediate feedback...
+
+            // Let's recreate the display logic inline for now
+            responses.forEach((student, index) => {
+                const card = document.createElement('div');
+                card.className = 'student-response-item';
+
+                let answerContentHTML = '';
+
+                // Simplified rendering for common modes
+                if (mode === 'drawing') {
+                    if(String(student.answer).startsWith('data:image')){
+                        answerContentHTML = `<img src="${student.answer}" alt="${student.name} 的繪圖" class="w-full h-auto rounded-md border max-h-32 object-contain cursor-pointer" data-full-image="${student.answer}"/>`;
+                    } else {
+                        answerContentHTML = `<p class="text-gray-500">繪圖未完成或格式錯誤</p>`;
+                    }
+                } else if (mode === 'text_input') {
+                    answerContentHTML = `<p class="text-gray-700 whitespace-pre-wrap">${student.answer || '(空白)'}</p>`;
+                } else {
+                    answerContentHTML = `<p class="text-gray-700">${student.answer || '未作答'}</p>`;
+                }
+
+                const workId = `${student.name}-${student.timestamp || index}`;
+                const isStarred = starredWorks.has(workId);
+
+                card.innerHTML = `
+                    <button class="responses-star-toggle-btn absolute top-1 right-1 w-6 h-6 rounded-full ${isStarred ? 'bg-yellow-400 text-white' : 'bg-white/80 text-slate-400'} hover:bg-yellow-400 hover:text-white transition-all shadow-sm z-10" data-work-id="${workId}">
+                        <i class="fas fa-star text-xs"></i>
+                    </button>
+                    <div class="name-box">${student.name}</div>
+                    <div class="answer-box">
+                        ${answerContentHTML}
+                    </div>
+                `;
+                container.appendChild(card);
+
+                // Add star button event listener
+                const starBtn = card.querySelector('.responses-star-toggle-btn');
+                if (starBtn) {
+                    starBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleStarWork(starBtn.dataset.workId);
+                    });
+                }
+
+                if (mode === 'drawing') {
+                    const imgElement = card.querySelector('.answer-box img');
+                    if (imgElement) {
+                        imgElement.addEventListener('click', (e) => {
+                            showMagnifiedDrawing(e.target.dataset.fullImage);
+                        });
+                    }
+                }
+            });
+        }
+
+        /**
+         * Toggles between showing all works and only starred works (for peer review).
+         */
+        function toggleStarredFilter() {
+            showOnlyStarred = !showOnlyStarred;
+            updateStarredFilterButton();
+            updateTeacherVoteStats(allPeerReviewVotes, currentSortMethod);
+        }
+
+        /**
+         * Toggles between showing all works and only starred works (for regular responses).
+         */
+        function toggleResponsesStarredFilter() {
+            responsesShowOnlyStarred = !responsesShowOnlyStarred;
+            updateResponsesFilterButton();
+            refreshStudentResponsesDisplay();
+        }
+
+        /**
+         * Updates the responses filter button text and styling.
+         */
+        function updateResponsesFilterButton() {
+            const filterBtn = document.getElementById('responses-toggle-starred-filter');
+            if (!filterBtn) return;
+
+            const starredCount = starredWorks.size;
+
+            if (responsesShowOnlyStarred) {
+                filterBtn.className = 'px-3 py-1.5 bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 transition-colors font-medium text-xs shadow-sm';
+                filterBtn.innerHTML = `<i class="fas fa-star mr-1"></i>星號 (${starredCount})`;
+            } else {
+                filterBtn.className = 'px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-xs';
+                filterBtn.innerHTML = `<i class="fas fa-star mr-1"></i>全部${starredCount > 0 ? ` (${starredCount}★)` : ''}`;
+            }
+        }
+
+        /**
+         * Updates the styling of responses sort buttons.
+         */
+        function updateResponsesSortButtonStyles() {
+            const sortByNameBtn = document.getElementById('responses-sort-by-name');
+            const sortByTimeBtn = document.getElementById('responses-sort-by-time');
+
+            if (!sortByNameBtn || !sortByTimeBtn) return;
+
+            // Reset buttons
+            sortByNameBtn.className = 'px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-xs';
+            sortByTimeBtn.className = 'px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-xs';
+
+            // Highlight active button
+            const activeClasses = 'px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-xs shadow-sm';
+            if (responsesSortMethod === 'name') {
+                sortByNameBtn.className = activeClasses;
+            } else {
+                sortByTimeBtn.className = activeClasses;
+            }
+        }
+
+        /**
+         * Updates the starred filter button text and styling.
+         */
+        function updateStarredFilterButton() {
+            const filterBtn = document.getElementById('toggle-starred-filter');
+            const starredCount = starredWorks.size;
+
+            if (showOnlyStarred) {
+                filterBtn.className = 'px-4 py-2 bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 transition-colors font-medium text-sm shadow-sm';
+                filterBtn.innerHTML = `<i class="fas fa-star mr-1"></i>只顯示星號 (${starredCount})`;
+            } else {
+                filterBtn.className = 'px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-sm';
+                filterBtn.innerHTML = `<i class="fas fa-star mr-1"></i>顯示全部作品${starredCount > 0 ? ` (${starredCount}★)` : ''}`;
+            }
+        }
+
+        /**
+         * Saves starred works to localStorage.
+         */
+        function saveStarredWorks() {
+            if (!classroomCode || !currentInteractionMode) return;
+            const key = `starredWorks_${classroomCode}_${currentInteractionMode}`;
+            localStorage.setItem(key, JSON.stringify(Array.from(starredWorks)));
+        }
+
+        /**
+         * Loads starred works from localStorage.
+         */
+        function loadStarredWorks() {
+            if (!classroomCode || !currentInteractionMode) return;
+            const key = `starredWorks_${classroomCode}_${currentInteractionMode}`;
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                try {
+                    starredWorks = new Set(JSON.parse(saved));
+                } catch (error) {
+                    console.error('Error loading starred works:', error);
+                    starredWorks = new Set();
+                }
+            } else {
+                starredWorks = new Set();
+            }
+        }
+
+        /**
+         * Clears starred works for the current interaction.
+         */
+        function clearStarredWorks() {
+            starredWorks.clear();
+            showOnlyStarred = false;
+            saveStarredWorks();
+            updateStarredFilterButton();
         }
 
         // --- Firebase Configuration Functions ---
