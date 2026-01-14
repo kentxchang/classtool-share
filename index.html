@@ -1468,7 +1468,7 @@
                         </span>
                     </p>
                     <div class="mt-2 text-slate-400 text-sm">
-                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V4.9.2</a>
+                        Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V5(支援gemini canvas中直接使用AI生成)</a>
                     </div>
                     <div class="mt-4 text-slate-500 text-xs max-w-2xl mx-auto px-4">
                         <p class="mb-2">
@@ -2378,12 +2378,18 @@ appId: &quot;...&quot;"></textarea>
                     <div style="margin-top: 15px;">
                         <label for="ai-model-select">選擇 AI 模型:</label>
                         <select id="ai-model-select" class="drawing-tool-select">
-                            <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (目前使用)</option>
-                            <option value="gemma-3-27b-it">Gemma 3 27B IT</option>
+                            <option value="gemini-2.5-flash-preview-09-2025" selected>Gemini 2.5 Flash Preview (免 Key 測試)</option>
+                            <option value="gemini-2.5-flash">Gemini 2.5 Flash (需 API Key)</option>
+                            <option value="gemma-3-27b-it">Gemma 3 27B IT (需 API Key)</option>
                         </select>
-                        <p style="font-size: 12px; color: #666; margin-top: 5px;">
-                            <i class="fas fa-info-circle"></i> 不同模型有不同的特性和效能，可依需求切換
-                        </p>
+                        <div style="margin-top: 10px; padding: 12px; background-color: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                            <p style="font-size: 13px; color: #1e40af; margin: 0; line-height: 1.5;">
+                                <i class="fas fa-info-circle"></i> <strong>Gemini Canvas 使用說明：</strong><br>
+                                • 選擇 Preview 模型可免 API Key 直接測試 AI 功能<br>
+                                • 請將 Firebase 配置填入程式碼中的硬編碼區域<br>
+                                • 硬編碼配置會自動優先使用，無需手動設定
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3113,6 +3119,41 @@ appId: &quot;...&quot;"></textarea>
         </div>
     </div>
 
+    <!-- 自定義確認對話框 -->
+    <div id="custom-confirm-modal" class="magnified-image-modal hidden">
+        <div class="magnified-image-modal-content" style="max-width: 500px;">
+            <button id="custom-confirm-close-btn" class="magnified-image-modal-close">×</button>
+            <div class="text-center mb-6">
+                <div class="mx-auto mb-4 w-16 h-16 flex items-center justify-center rounded-full bg-yellow-100">
+                    <i class="fas fa-question-circle text-4xl text-yellow-600"></i>
+                </div>
+                <h4 class="text-xl font-bold text-gray-800 mb-3">確認操作</h4>
+                <p id="custom-confirm-message" class="text-gray-700 leading-relaxed"></p>
+            </div>
+            <div class="flex justify-center gap-4">
+                <button id="custom-confirm-cancel-btn" class="btn btn-gray px-8">取消</button>
+                <button id="custom-confirm-ok-btn" class="btn btn-primary px-8">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自定義提示對話框 -->
+    <div id="custom-alert-modal" class="magnified-image-modal hidden">
+        <div class="magnified-image-modal-content" style="max-width: 500px;">
+            <button id="custom-alert-close-btn" class="magnified-image-modal-close">×</button>
+            <div class="text-center mb-6">
+                <div id="custom-alert-icon-container" class="mx-auto mb-4 w-16 h-16 flex items-center justify-center rounded-full">
+                    <i id="custom-alert-icon" class="text-4xl"></i>
+                </div>
+                <h4 id="custom-alert-title" class="text-xl font-bold text-gray-800 mb-3">提示</h4>
+                <p id="custom-alert-message" class="text-gray-700 leading-relaxed"></p>
+            </div>
+            <div class="flex justify-center">
+                <button id="custom-alert-ok-btn" class="btn btn-primary px-12">確定</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase 設定檔（請修改此檔案來使用您自己的 Firebase 專案） -->
     <script src="firebase-config.js"></script>
 
@@ -3135,8 +3176,10 @@ appId: &quot;...&quot;"></textarea>
         let db = null;
         let isFirebaseConfigApplied = false; // Track if config has been applied
 
-        // Use __app_id for the base Firestore path.
-        const baseAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-classroom-app';
+        // CRITICAL FIX: baseAppId should ALWAYS match firebaseConfig.projectId
+        // This ensures consistent Firestore paths across all environments
+        // Initialize to default, but will be updated when Firebase config is loaded
+        let baseAppId = 'default-classroom-app';
         let userId = null;
         let studentName = null;
         let currentRole = null; // 'teacher' or 'student'
@@ -3189,8 +3232,8 @@ appId: &quot;...&quot;"></textarea>
         // AI Settings Global Object
         let aiSettings = {
             aiSource: 'gemini-custom', // 'gemini-default' or 'gemini-custom'
-            geminiApiKey: '', // Custom API key if 'gemini-custom' is selected
-            selectedModel: 'gemini-2.5-flash' // Selected AI model
+            geminiApiKey: '', // Custom API key if 'gemini-custom' is selected (empty for preview models)
+            selectedModel: 'gemini-2.5-flash-preview-09-2025' // Selected AI model (default to preview for free testing)
         };
         
         // MODIFIED: Combined Dispatch Settings Global Object
@@ -3619,6 +3662,102 @@ appId: &quot;...&quot;"></textarea>
         }
 
         /**
+         * Custom Confirm Dialog - Replaces browser's confirm()
+         * Returns a Promise that resolves to true/false
+         */
+        function customConfirm(message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('custom-confirm-modal');
+                const messageEl = document.getElementById('custom-confirm-message');
+                const okBtn = document.getElementById('custom-confirm-ok-btn');
+                const cancelBtn = document.getElementById('custom-confirm-cancel-btn');
+                const closeBtn = document.getElementById('custom-confirm-close-btn');
+
+                messageEl.textContent = message;
+                modal.classList.remove('hidden');
+
+                const cleanup = () => {
+                    modal.classList.add('hidden');
+                    okBtn.removeEventListener('click', handleOk);
+                    cancelBtn.removeEventListener('click', handleCancel);
+                    closeBtn.removeEventListener('click', handleCancel);
+                };
+
+                const handleOk = () => {
+                    cleanup();
+                    resolve(true);
+                };
+
+                const handleCancel = () => {
+                    cleanup();
+                    resolve(false);
+                };
+
+                okBtn.addEventListener('click', handleOk);
+                cancelBtn.addEventListener('click', handleCancel);
+                closeBtn.addEventListener('click', handleCancel);
+            });
+        }
+
+        /**
+         * Custom Alert Dialog - Replaces browser's alert()
+         * Returns a Promise that resolves when OK is clicked
+         */
+        function customAlert(message, title = '提示', type = 'info') {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('custom-alert-modal');
+                const titleEl = document.getElementById('custom-alert-title');
+                const messageEl = document.getElementById('custom-alert-message');
+                const iconContainer = document.getElementById('custom-alert-icon-container');
+                const icon = document.getElementById('custom-alert-icon');
+                const okBtn = document.getElementById('custom-alert-ok-btn');
+                const closeBtn = document.getElementById('custom-alert-close-btn');
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+
+                // Set icon and color based on type
+                iconContainer.className = 'mx-auto mb-4 w-16 h-16 flex items-center justify-center rounded-full';
+                icon.className = 'text-4xl';
+
+                switch (type) {
+                    case 'success':
+                        iconContainer.classList.add('bg-green-100');
+                        icon.classList.add('fas', 'fa-check-circle', 'text-green-600');
+                        break;
+                    case 'error':
+                        iconContainer.classList.add('bg-red-100');
+                        icon.classList.add('fas', 'fa-times-circle', 'text-red-600');
+                        break;
+                    case 'warning':
+                        iconContainer.classList.add('bg-yellow-100');
+                        icon.classList.add('fas', 'fa-exclamation-triangle', 'text-yellow-600');
+                        break;
+                    default: // info
+                        iconContainer.classList.add('bg-blue-100');
+                        icon.classList.add('fas', 'fa-info-circle', 'text-blue-600');
+                        break;
+                }
+
+                modal.classList.remove('hidden');
+
+                const cleanup = () => {
+                    modal.classList.add('hidden');
+                    okBtn.removeEventListener('click', handleOk);
+                    closeBtn.removeEventListener('click', handleOk);
+                };
+
+                const handleOk = () => {
+                    cleanup();
+                    resolve();
+                };
+
+                okBtn.addEventListener('click', handleOk);
+                closeBtn.addEventListener('click', handleOk);
+            });
+        }
+
+        /**
          * Question Bank Management Functions (Classroom-specific)
          */
         function getQuestionBankKey() {
@@ -3684,14 +3823,15 @@ appId: &quot;...&quot;"></textarea>
             }
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const content = e.target.result;
                 const fileName = file.name.replace('.txt', '');
 
                 // Check if bank with same name exists
                 const existingIndex = questionBanks.findIndex(bank => bank.name === fileName);
                 if (existingIndex !== -1) {
-                    if (confirm(`題庫「${fileName}」已存在，是否要覆蓋？`)) {
+                    const confirmed = await customConfirm(`題庫「${fileName}」已存在，是否要覆蓋？`);
+                    if (confirmed) {
                         questionBanks[existingIndex] = { name: fileName, content: content };
                     } else {
                         return;
@@ -3712,7 +3852,7 @@ appId: &quot;...&quot;"></textarea>
             reader.readAsText(file, 'UTF-8');
         }
 
-        function saveQuestionBankFromTextarea() {
+        async function saveQuestionBankFromTextarea() {
             const nameInput = document.getElementById('question-bank-name-input');
             const textarea = document.getElementById('custom-mc-questions-textarea');
             const name = nameInput.value.trim();
@@ -3733,7 +3873,8 @@ appId: &quot;...&quot;"></textarea>
             // Check if bank with same name exists
             const existingIndex = questionBanks.findIndex(bank => bank.name === name);
             if (existingIndex !== -1) {
-                if (confirm(`題庫「${name}」已存在，是否要覆蓋？`)) {
+                const confirmed = await customConfirm(`題庫「${name}」已存在，是否要覆蓋？`);
+                if (confirmed) {
                     questionBanks[existingIndex] = { name: name, content: content };
                 } else {
                     return;
@@ -3756,11 +3897,12 @@ appId: &quot;...&quot;"></textarea>
             }
         }
 
-        function deleteQuestionBank(index) {
+        async function deleteQuestionBank(index) {
             loadQuestionBanksFromStorage(); // Load latest from storage
             if (index >= 0 && index < questionBanks.length) {
                 const bankName = questionBanks[index].name;
-                if (confirm(`確定要刪除題庫「${bankName}」嗎？`)) {
+                const confirmed = await customConfirm(`確定要刪除題庫「${bankName}」嗎？`);
+                if (confirmed) {
                     questionBanks.splice(index, 1);
                     saveQuestionBanksToStorage(); // Save to storage
                     updateQuestionBankList();
@@ -3876,7 +4018,7 @@ appId: &quot;...&quot;"></textarea>
             }
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const content = e.target.result;
                 const fileName = file.name.replace('.txt', '');
                 const lines = content.split('\n').map(line => line.trim()).filter(line => line);
@@ -3892,7 +4034,8 @@ appId: &quot;...&quot;"></textarea>
                 loadSequencingBanksFromStorage(); // Load latest from storage
                 const existingIndex = sequencingQuestionBanks.findIndex(bank => bank.name === fileName);
                 if (existingIndex !== -1) {
-                    if (confirm(`題庫「${fileName}」已存在，是否要覆蓋？`)) {
+                    const confirmed = await customConfirm(`題庫「${fileName}」已存在，是否要覆蓋？`);
+                    if (confirmed) {
                         sequencingQuestionBanks[existingIndex] = { name: fileName, question: question, items: items };
                     } else {
                         return;
@@ -3914,7 +4057,7 @@ appId: &quot;...&quot;"></textarea>
             reader.readAsText(file, 'UTF-8');
         }
 
-        function saveSequencingBank() {
+        async function saveSequencingBank() {
             const nameInput = document.getElementById('seq-bank-name-input');
             const itemsTextarea = document.getElementById('sequencing-items-textarea');
 
@@ -3935,7 +4078,8 @@ appId: &quot;...&quot;"></textarea>
             loadSequencingBanksFromStorage(); // Load latest from storage
             const existingIndex = sequencingQuestionBanks.findIndex(bank => bank.name === name);
             if (existingIndex !== -1) {
-                if (confirm(`題庫「${name}」已存在，是否要覆蓋？`)) {
+                const confirmed = await customConfirm(`題庫「${name}」已存在，是否要覆蓋？`);
+                if (confirmed) {
                     sequencingQuestionBanks[existingIndex] = { name: name, question: question, items: items };
                 } else {
                     return;
@@ -3958,11 +4102,12 @@ appId: &quot;...&quot;"></textarea>
             }
         }
 
-        function deleteSequencingBank(index) {
+        async function deleteSequencingBank(index) {
             loadSequencingBanksFromStorage(); // Load latest from storage
             if (index >= 0 && index < sequencingQuestionBanks.length) {
                 const bankName = sequencingQuestionBanks[index].name;
-                if (confirm(`確定要刪除題庫「${bankName}」嗎？`)) {
+                const confirmed = await customConfirm(`確定要刪除題庫「${bankName}」嗎？`);
+                if (confirmed) {
                     sequencingQuestionBanks.splice(index, 1);
                     saveSequencingBanksToStorage(); // Save to storage
                     updateSequencingBankList();
@@ -4036,7 +4181,7 @@ appId: &quot;...&quot;"></textarea>
             }
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const content = e.target.result;
                 const fileName = file.name.replace('.txt', '');
                 const lines = content.split('\n').map(line => line.trim()).filter(line => line);
@@ -4052,7 +4197,8 @@ appId: &quot;...&quot;"></textarea>
                 loadMatchingBanksFromStorage(); // Load latest from storage
                 const existingIndex = matchingQuestionBanks.findIndex(bank => bank.name === fileName);
                 if (existingIndex !== -1) {
-                    if (confirm(`題庫「${fileName}」已存在，是否要覆蓋？`)) {
+                    const confirmed = await customConfirm(`題庫「${fileName}」已存在，是否要覆蓋？`);
+                    if (confirmed) {
                         matchingQuestionBanks[existingIndex] = { name: fileName, question: question, pairs: pairs };
                     } else {
                         return;
@@ -4074,7 +4220,7 @@ appId: &quot;...&quot;"></textarea>
             reader.readAsText(file, 'UTF-8');
         }
 
-        function saveMatchingBank() {
+        async function saveMatchingBank() {
             const nameInput = document.getElementById('match-bank-name-input');
             const pairsTextarea = document.getElementById('matching-pairs-textarea');
 
@@ -4095,7 +4241,8 @@ appId: &quot;...&quot;"></textarea>
             loadMatchingBanksFromStorage(); // Load latest from storage
             const existingIndex = matchingQuestionBanks.findIndex(bank => bank.name === name);
             if (existingIndex !== -1) {
-                if (confirm(`題庫「${name}」已存在，是否要覆蓋？`)) {
+                const confirmed = await customConfirm(`題庫「${name}」已存在，是否要覆蓋？`);
+                if (confirmed) {
                     matchingQuestionBanks[existingIndex] = { name: name, question: question, pairs: pairs };
                 } else {
                     return;
@@ -4118,11 +4265,12 @@ appId: &quot;...&quot;"></textarea>
             }
         }
 
-        function deleteMatchingBank(index) {
+        async function deleteMatchingBank(index) {
             loadMatchingBanksFromStorage(); // Load latest from storage
             if (index >= 0 && index < matchingQuestionBanks.length) {
                 const bankName = matchingQuestionBanks[index].name;
-                if (confirm(`確定要刪除題庫「${bankName}」嗎？`)) {
+                const confirmed = await customConfirm(`確定要刪除題庫「${bankName}」嗎？`);
+                if (confirmed) {
                     matchingQuestionBanks.splice(index, 1);
                     saveMatchingBanksToStorage(); // Save to storage
                     updateMatchingBankList();
@@ -6961,30 +7109,40 @@ appId: &quot;...&quot;"></textarea>
                 try {
                     const parsedSettings = JSON.parse(savedSettings);
                     if (parsedSettings.aiSource) aiSettings.aiSource = parsedSettings.aiSource;
-                    // MODIFIED: If geminiApiKey is empty after loading, set default.
-                    aiSettings.geminiApiKey = parsedSettings.geminiApiKey || '12345678';
-                    aiSettings.selectedModel = parsedSettings.selectedModel || 'gemini-2.5-flash';
+                    // MODIFIED: Allow empty API key for preview models
+                    aiSettings.geminiApiKey = parsedSettings.geminiApiKey || '';
+                    aiSettings.selectedModel = parsedSettings.selectedModel || 'gemini-2.5-flash-preview-09-2025';
                 } catch (e) {
                     console.error("Failed to parse AI settings from localStorage:", e);
-                    // If parsing fails, set default API key
-                    aiSettings.geminiApiKey = '12345678';
-                    aiSettings.selectedModel = 'gemini-2.5-flash';
+                    // If parsing fails, use preview model with empty key
+                    aiSettings.geminiApiKey = '';
+                    aiSettings.selectedModel = 'gemini-2.5-flash-preview-09-2025';
                 }
             } else {
-                // If no settings are saved at all, set default API key
-                aiSettings.geminiApiKey = '12345678';
-                aiSettings.selectedModel = 'gemini-2.5-flash';
+                // If no settings are saved at all, use preview model with empty key
+                aiSettings.geminiApiKey = '';
+                aiSettings.selectedModel = 'gemini-2.5-flash-preview-09-2025';
             }
             updateModelDisplays();
         }
 
         function getApiUrl(apiKey) {
-            const model = aiSettings.selectedModel || 'gemini-2.5-flash';
+            const model = aiSettings.selectedModel || 'gemini-2.5-flash-preview-09-2025';
+            // For preview models or when API key is empty, omit the key parameter
+            // This allows testing in Gemini Canvas preview environment
+            // Preview models (like gemini-2.5-flash-preview-09-2025) can be used without API key in Gemini Canvas
+            if (!apiKey || apiKey.trim() === '' || model.includes('preview')) {
+                console.log(`✓ 使用免 Key 模式: ${model}`);
+                console.log('  ⭐ 此模式適用於 Gemini Canvas 預覽環境');
+                return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+            }
+            console.log(`✓ 使用 API Key 模式: ${model}`);
             return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         }
 
         function getCurrentModelName() {
             const modelMap = {
+                'gemini-2.5-flash-preview-09-2025': 'Gemini 2.5 Flash Preview (免 Key)',
                 'gemini-2.5-flash': 'Gemini 2.5 Flash',
                 'gemma-3-27b-it': 'Gemma 3 27B IT'
             };
@@ -7310,13 +7468,21 @@ appId: &quot;...&quot;"></textarea>
                 updateTeacherPauseButtonUI(); // NEW: Update pause button UI
 
                 await signOut(auth); // Explicitly sign out the user
-                
+
                 // NEW: After signing out, explicitly sign in again to get a fresh authenticated state
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                    console.log("Signed in with custom token.");
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                        console.log("✓ Re-signed in with custom token.");
+                    } catch (tokenError) {
+                        // If custom token fails, fallback to anonymous
+                        console.warn("⚠ Custom token re-authentication failed, using anonymous auth:", tokenError.code);
+                        await signInAnonymously(auth);
+                        console.log("✓ Re-signed in anonymously (fallback).");
+                    }
                 } else {
                     await signInAnonymously(auth);
+                    console.log("✓ Re-signed in anonymously.");
                 }
                 console.log("Re-authenticated after ending session.");
 
@@ -7333,7 +7499,8 @@ appId: &quot;...&quot;"></textarea>
          * (Teacher) Leave classroom without deleting data - just clear local state and return to entry view
          */
         async function leaveClassroom() {
-            if (!confirm('確定要暫離教室嗎？教室資料會保留，您稍後可以重新進入。')) {
+            const confirmed = await customConfirm('確定要暫離教室嗎？教室資料會保留，您稍後可以重新進入。');
+            if (!confirmed) {
                 return;
             }
 
@@ -7647,9 +7814,22 @@ appId: &quot;...&quot;"></textarea>
                     // Save classroom code to recent classrooms
                     saveRecentClassroom(classroomCode);
 
-                    // Set initial classroom state in Firestore, including isPaused: false
+                    // Set initial classroom state in Firestore, completely clearing old state
                     const controlRef = doc(db, 'artifacts', baseAppId, 'public', 'data', 'classrooms', classroomCode, 'settings', 'control');
-                    await setDoc(controlRef, { active_mode: 'waiting', teacherId: userId, backgroundImage: null, isPaused: false, multiple_choice_questions: null }, { merge: true });
+                    // CRITICAL FIX: Use setDoc without merge to completely replace old classroom state
+                    // This ensures students don't see old interaction modes from previous sessions
+                    await setDoc(controlRef, {
+                        active_mode: 'waiting',
+                        teacherId: userId,
+                        backgroundImage: null,
+                        isPaused: false,
+                        multiple_choice_questions: null,
+                        sequencingSettings: null,
+                        matchingSettings: null,
+                        readingComprehensionData: null,
+                        focusGameSettings: null,
+                        dispatchSettings: null
+                    });
                     isResponsePaused = false; // Initialize local state
                     updateTeacherPauseButtonUI(); // Update button UI
                     currentMultipleChoiceQuestions = null; // Ensure this is cleared on new class
@@ -8273,8 +8453,9 @@ appId: &quot;...&quot;"></textarea>
                 });
 
                 // Clear canvas
-                document.getElementById('clear-canvas').addEventListener('click', () => {
-                    if (confirm('確定要清除所有畫記嗎？')) {
+                document.getElementById('clear-canvas').addEventListener('click', async () => {
+                    const confirmed = await customConfirm('確定要清除所有畫記嗎？');
+                    if (confirmed) {
                         const canvas = document.getElementById('sticky-drawing-canvas');
                         const ctx = canvas.getContext('2d');
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -10286,6 +10467,7 @@ ${textResponses.join('\n\n')}`;
                 }
 
                 // Initialize Firebase with the new config
+                // baseAppId will be updated inside initializeFirebase()
                 await initializeFirebase();
 
                 if (!suppressMessage) {
@@ -10316,12 +10498,25 @@ ${textResponses.join('\n\n')}`;
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                console.log("Firebase 初始化成功");
+
+                // CRITICAL: Always update baseAppId to match the current Firebase project
+                // This ensures consistent Firestore paths in all environments
+                baseAppId = firebaseConfig.projectId;
+
+                console.log("✅ Firebase 初始化成功");
+                console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                console.log("📦 Firebase 配置資訊:");
+                console.log(`  • Project ID: ${firebaseConfig.projectId}`);
+                console.log(`  • Auth Domain: ${firebaseConfig.authDomain}`);
+                console.log(`  • Database: ${firebaseConfig.projectId}.firebaseapp.com`);
+                console.log(`  • Console URL: https://console.firebase.google.com/project/${firebaseConfig.projectId}/firestore`);
+                console.log(`  📂 Firestore 路徑: artifacts/${baseAppId}/public/data/classrooms/...`);
+                console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
                 // Update Firebase Project ID display on main screen
                 updateFirebaseProjectIdDisplay();
             } catch (error) {
-                console.error("Firebase 初始化失敗:", error);
+                console.error("❌ Firebase 初始化失敗:", error);
                 throw error;
             }
         }
@@ -10351,95 +10546,167 @@ ${textResponses.join('\n\n')}`;
 
         /**
          * Setup Firebase configuration from various sources
-         * 優先順序：URL 參數 > localStorage > firebase-config.js > 原始碼硬編碼
+         * 優先順序：硬編碼配置 > URL 參數 > localStorage > firebase-config.js
          */
         async function setupFirebaseConfig() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const configParam = urlParams.get('config');
-            let rawConfigString = localStorage.getItem('firebaseConfig');
-            let configSource = "localStorage";
+            // ============================================================================
+            // 【Firebase 設定區】- 硬編碼配置（最高優先權）
+            // ============================================================================
+            // 🎯 Gemini Canvas 使用指南：
+            //
+            // 在 Gemini Canvas 中使用本程式，請按以下步驟設定：
+            //
+            // 1. 取得 Firebase 配置：
+            //    - 前往 Firebase Console (https://console.firebase.google.com/)
+            //    - 選擇您的專案 > 專案設定 > 一般設定
+            //    - 在「您的應用程式」區塊找到 firebaseConfig
+            //    - 複製 apiKey、authDomain、projectId 等值
+            //
+            // 2. 填入硬編碼配置：
+            //    - 將下方六行 "demo" 值直接取代為您的 Firebase 設定值
+            //    - 例如：apiKey: "AIzaSyC..."（用您實際的值取代）
+            //    - ⚠️ 特別注意：projectId 必須正確，它會決定 Firestore 資料庫路徑
+            //
+            // 3. AI 功能設定：
+            //    - 預設使用 gemini-2.5-flash-preview-09-2025 模型
+            //    - 此模型可在 Gemini Canvas 中免 API Key 直接測試
+            //    - 無需額外設定，開箱即用
+            //
+            // 4. 驗證配置：
+            //    - 載入頁面後，查看瀏覽器控制台
+            //    - 確認顯示：「✓ Gemini Canvas 模式：優先使用內嵌配置」
+            //    - 確認 Firestore 路徑為：artifacts/[您的projectId]/public/data/...
+            //
+            // ⭐ 優先順序：硬編碼配置 > URL 參數 > localStorage > firebase-config.js
+            // ⭐ 硬編碼配置會自動優先使用，確保在 Gemini Canvas 環境中正常運作
+            // ⭐ 只要硬編碼配置有效，程式會忽略其他配置來源
+            // ⭐ baseAppId 會自動同步為 projectId，確保所有資料庫操作都指向正確的項目
+            // ============================================================================
+            const hardcodedConfig = {
+                apiKey: "demo",               // 替換為您的 Firebase API Key
+                authDomain: "demo",           // 替換為您的 authDomain (例如：your-project.firebaseapp.com)
+                projectId: "demo",            // 替換為您的 projectId
+                storageBucket: "demo",        // 替換為您的 storageBucket
+                messagingSenderId: "demo",    // 替換為您的 messagingSenderId
+                appId: "demoV5"            // 替換為您的 appId
+            };
 
-            // Priority 1: Check URL parameter (優先使用 URL 參數)
-            if (configParam) {
-                try {
-                    rawConfigString = atob(configParam);
-                    configSource = "URL";
-                } catch (e) {
-                    console.error("URL config base64 解碼失敗:", e);
-                    document.body.innerHTML = `<div class="text-center p-8 text-red-600"><h1 class="text-2xl font-bold">設定檔錯誤</h1><p>Firebase 設定檔錯誤，請點擊右上角 'Firebase 設定' 按鈕重新設定。</p></div>`;
-                    return false;
+            // 📝 填寫範例（請勿直接複製，這只是格式示例）：
+            // const hardcodedConfig = {
+            //     apiKey: "AIzaSyBxxx...",
+            //     authDomain: "my-classroom-abc123.firebaseapp.com",
+            //     projectId: "my-classroom-abc123",
+            //     storageBucket: "my-classroom-abc123.appspot.com",
+            //     messagingSenderId: "987654321098",
+            //     appId: "1:987654321098:web:def..."
+            // };
+            // ============================================================================
+
+            // Helper function to check if hardcoded config is valid (not demo)
+            function isValidHardcodedConfig(config) {
+                // Check if all required fields exist and are not demo values
+                const requiredFields = ['apiKey', 'authDomain', 'projectId'];
+                for (const field of requiredFields) {
+                    if (!config[field] ||
+                        config[field] === 'demo' ||
+                        config[field].toLowerCase().startsWith('demo')) {
+                        return false;
+                    }
                 }
+                return true;
             }
 
-            // Priority 2: Check external firebase-config.js
-            if (!rawConfigString && typeof __firebase_config !== 'undefined') {
+            // Priority 1: Use hardcoded config if user has set it (最優先使用硬編碼配置)
+            // In Gemini Canvas environment, this ensures the embedded config is always used first
+            if (isValidHardcodedConfig(hardcodedConfig)) {
                 try {
-                    firebaseConfig = JSON.parse(__firebase_config);
+                    // CRITICAL: Clear any existing localStorage config to prevent conflicts
+                    // This ensures hardcoded config always takes precedence in Canvas environment
+                    localStorage.removeItem('firebaseConfig');
+                    localStorage.removeItem('firebaseConfigDraft');
+                    console.log("  🧹 已清除 localStorage 中的舊配置，確保使用硬編碼配置");
+
+                    firebaseConfig = hardcodedConfig;
+
+                    // baseAppId will be updated in initializeFirebase()
                     await initializeFirebase();
                     isFirebaseConfigApplied = true;
-                    console.log("已從外部 firebase-config.js 自動載入並套用 Firebase 設定。");
-                    return true;
+                    console.log("✓ 已從原始碼中的硬編碼設定自動載入並套用 Firebase 設定。");
+                    console.log(`  使用專案: ${hardcodedConfig.projectId}`);
+                    console.log("  ⭐ Gemini Canvas 模式：優先使用內嵌配置");
+                    console.log(`  📍 Firebase Database: https://console.firebase.google.com/project/${hardcodedConfig.projectId}/firestore`);
+                    console.log(`  📂 Firestore 路徑: artifacts/${baseAppId}/public/data/classrooms/...`);
+
+                    // Return special marker to indicate hardcoded config was used
+                    return 'hardcoded';
                 } catch (error) {
-                    console.error("外部 firebase-config.js 解析失敗:", error);
+                    console.error("⚠ 原始碼中的 Firebase 設定初始化失敗:", error);
+                    // In Gemini Canvas mode, if hardcoded config fails, don't try other sources
+                    // This prevents confusion and ensures users know the embedded config has an issue
+                    console.error("  ⚠ 硬編碼配置無效，請檢查 Firebase 設定");
+                    return 'demo';
                 }
             }
 
-            // Apply config if found
+            // Priority 2: Check URL parameter (第二優先權：URL 參數)
+            // Only check URL params if hardcoded config is not set (i.e., still "demo")
+            const urlParams = new URLSearchParams(window.location.search);
+            const configParam = urlParams.get('config');
+            if (configParam) {
+                try {
+                    const rawConfigString = atob(configParam);
+                    const applySuccess = await applyFirebaseConfig(rawConfigString, true);
+                    if (applySuccess) {
+                        isFirebaseConfigApplied = true;
+                        // baseAppId updated in initializeFirebase()
+                        console.log("✓ 已從 URL 參數自動載入並套用 Firebase 設定。");
+                        console.log(`  📍 Firebase Database: https://console.firebase.google.com/project/${firebaseConfig.projectId}/firestore`);
+                        // Save URL config to localStorage for future use
+                        localStorage.setItem('firebaseConfig', rawConfigString);
+                        console.log("已將 URL 設定儲存至 localStorage");
+                        return true;
+                    }
+                } catch (e) {
+                    console.error("⚠ URL config 處理失敗，嘗試其他來源:", e);
+                    // Continue to try other sources if URL config fails
+                }
+            }
+
+            // Priority 3: Check localStorage (第三優先權：本地儲存)
+            let rawConfigString = localStorage.getItem('firebaseConfig');
             if (rawConfigString) {
                 try {
                     const applySuccess = await applyFirebaseConfig(rawConfigString, true);
                     if (applySuccess) {
                         isFirebaseConfigApplied = true;
-                        console.log(`已從 ${configSource} 自動載入並套用 Firebase 設定。`);
-
-                        // If from URL, save to localStorage
-                        if (configSource === "URL") {
-                            localStorage.setItem('firebaseConfig', rawConfigString);
-                            console.log("已將 URL 設定儲存至 localStorage");
-                        }
+                        // baseAppId already updated in initializeFirebase()
+                        console.log("✓ 已從 localStorage 自動載入並套用 Firebase 設定。");
+                        console.log(`  📍 Firebase Database: https://console.firebase.google.com/project/${firebaseConfig.projectId}/firestore`);
+                        console.log(`  📂 Firestore 路徑: artifacts/${baseAppId}/public/data/classrooms/...`);
                         return true;
                     }
                 } catch (error) {
-                    console.error("套用 Firebase 設定失敗:", error);
+                    console.error("⚠ 套用 localStorage Firebase 設定失敗，嘗試其他來源:", error);
                 }
             }
 
-            // ============================================================================
-            // 【Firebase 設定區】- 備用設定（優先權最低）
-            // ============================================================================
-            // 使用方式：將下方六行 "demo" 直接取代為您的 Firebase 設定值
-            //
-            // 1. 前往 Firebase Console > 專案設定 > 一般設定
-            // 2. 在「您的應用程式」區塊找到 firebaseConfig
-            // 3. 複製對應的值，取代下方的 "demo"
-            //
-            // 優先順序：localStorage > URL 參數 > firebase-config.js > 此設定
-            // 如果上述來源都沒有設定，才會使用這裡的值
-            // ============================================================================
-            firebaseConfig = {
-                apiKey: "demo",
-                authDomain: "demo",
-                projectId: "demo",
-                storageBucket: "demo",
-                messagingSenderId: "demo",
-                appId: "demoV4.9"
-            };
-            // ============================================================================
-
-            // Check if this is a valid config (not demo or starts with demo)
-            if (firebaseConfig.apiKey !== "demo" && !firebaseConfig.apiKey.startsWith("demo")) {
+            // Priority 4: Check external firebase-config.js (最低優先權：外部檔案)
+            if (typeof __firebase_config !== 'undefined') {
                 try {
+                    firebaseConfig = JSON.parse(__firebase_config);
+                    // baseAppId will be updated inside initializeFirebase()
                     await initializeFirebase();
                     isFirebaseConfigApplied = true;
-                    console.log("已從原始碼中的備用設定自動載入並套用 Firebase 設定。");
+                    console.log("✓ 已從外部 firebase-config.js 自動載入並套用 Firebase 設定。");
+                    console.log(`  📂 Firestore 路徑: artifacts/${baseAppId}/public/data/classrooms/...`);
                     return true;
                 } catch (error) {
-                    console.error("原始碼中的 Firebase 設定初始化失敗:", error);
+                    console.error("⚠ 外部 firebase-config.js 解析失敗:", error);
                 }
             }
 
             // No valid config found - return 'demo' to skip Firebase initialization
-            console.warn("未找到 Firebase 設定，請使用右上角按鈕進行設定");
+            console.warn("⚠ 未找到 Firebase 設定，請使用右上角按鈕進行設定，或在程式碼中設定硬編碼配置");
             // Don't initialize Firebase with demo config, just return 'demo'
             return 'demo';
         }
@@ -10674,8 +10941,9 @@ ${textResponses.join('\n\n')}`;
         /**
          * Handle clear Firebase configuration button click
          */
-        function handleClearFirebaseConfig() {
-            if (confirm('確定要清除本地儲存的 Firebase 設定嗎？清除後需要重新整理頁面才會生效。')) {
+        async function handleClearFirebaseConfig() {
+            const confirmed = await customConfirm('確定要清除本地儲存的 Firebase 設定嗎？清除後需要重新整理頁面才會生效。');
+            if (confirmed) {
                 // Clear all Firebase-related data from localStorage
                 localStorage.removeItem('firebaseConfig');
                 localStorage.removeItem('firebaseConfigDraft');
@@ -10847,6 +11115,29 @@ ${textResponses.join('\n\n')}`;
                 return; // Stop initialization here
             }
 
+            // Show success banner if using hardcoded config (for Gemini Canvas environment)
+            if (configResult === 'hardcoded' && firebaseConfig && firebaseConfig.projectId !== 'demo') {
+                const successBanner = document.createElement('div');
+                successBanner.id = 'firebase-success-banner';
+                successBanner.className = 'fixed top-16 left-0 right-0 bg-green-100 border-b-2 border-green-400 p-3 text-center z-10';
+                successBanner.innerHTML = `
+                    <p class="text-green-800 font-semibold text-sm">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        ✓ Gemini Canvas 模式已啟用 | Firebase: <span class="font-bold">${firebaseConfig.projectId}</span> |
+                        資料庫路徑: <span class="font-mono text-xs">artifacts/${baseAppId}/...</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-green-600 hover:text-green-800">✕</button>
+                    </p>
+                `;
+                document.body.insertBefore(successBanner, document.body.firstChild);
+
+                // Auto-hide after 10 seconds (increased to give user more time to read)
+                setTimeout(() => {
+                    if (successBanner && successBanner.parentElement) {
+                        successBanner.remove();
+                    }
+                }, 10000);
+            }
+
             loadAISettings();
             loadDispatchSettings(); // Load saved combined dispatch settings
 
@@ -10864,11 +11155,16 @@ ${textResponses.join('\n\n')}`;
                         currentRole = 'teacher';
                         document.getElementById('end-class-button-text').textContent = `下課 教室代碼: ${classroomCode}`; // Update button text
                         document.getElementById('end-class-monitor-button-text').textContent = `下課 教室代碼: ${classroomCode}`; // Update button text for monitor view
-                        
+
                         // NEW: Fetch initial pause state and dispatch settings for teacher
                         const controlRef = doc(db, 'artifacts', baseAppId, 'public', 'data', 'classrooms', classroomCode, 'settings', 'control');
                         const docSnap = await getDoc(controlRef);
                         if (docSnap.exists()) {
+                            // CRITICAL FIX: Reset active_mode to 'waiting' when teacher re-enters classroom
+                            // This prevents students from seeing old interaction modes from previous sessions
+                            await setDoc(controlRef, { active_mode: 'waiting' }, { merge: true });
+                            console.log("✓ 已重置教室互動模式為等待狀態");
+
                             isResponsePaused = docSnap.data().isPaused || false;
                             // MODIFIED: Load dispatchSettings from Firestore
                             const fetchedDispatchSettings = docSnap.data().dispatchSettings;
@@ -10911,14 +11207,21 @@ ${textResponses.join('\n\n')}`;
             
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                    console.log("Signed in with custom token.");
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                        console.log("✓ Signed in with custom token.");
+                    } catch (tokenError) {
+                        // If custom token fails (e.g., token mismatch in Gemini Canvas), fallback to anonymous
+                        console.warn("⚠ Custom token authentication failed, falling back to anonymous auth:", tokenError.code);
+                        await signInAnonymously(auth);
+                        console.log("✓ Signed in anonymously (fallback).");
+                    }
                 } else {
                     await signInAnonymously(auth);
-                    console.log("Signed in anonymously.");
+                    console.log("✓ Signed in anonymously.");
                 }
             } catch (error) {
-                console.error("Firebase Authentication failed:", error);
+                console.error("❌ Firebase Authentication failed:", error);
                 document.body.innerHTML = `<div class="text-center p-8 text-red-600"><h1 class="text-2xl font-bold">驗證失敗</h1><p>無法連接至互動服務，請檢查 Firebase 設定或網路連線。</p><p class=\"text-sm mt-2\">${error.message}</p></div>`;
             }
         }
@@ -12833,7 +13136,7 @@ ${existingText}
         /**
          * Save reading question bank to localStorage
          */
-        function saveReadingQuestionBank() {
+        async function saveReadingQuestionBank() {
             const nameInput = document.getElementById('reading-question-bank-name-input');
             const bankName = nameInput.value.trim();
             const textContent = document.getElementById('reading-text-textarea').value.trim();
@@ -12869,7 +13172,8 @@ ${existingText}
             // Check if bank name already exists
             const existingIndex = readingQuestionBanks.findIndex(b => b.name === bankName);
             if (existingIndex >= 0) {
-                if (!confirm(`題庫「${bankName}」已存在，是否覆蓋？`)) {
+                const confirmed = await customConfirm(`題庫「${bankName}」已存在，是否覆蓋？`);
+                if (!confirmed) {
                     return;
                 }
                 readingQuestionBanks[existingIndex] = bank;
@@ -12965,11 +13269,12 @@ ${existingText}
         /**
          * Delete reading bank
          */
-        function deleteReadingBank(index) {
+        async function deleteReadingBank(index) {
             loadReadingBanksFromStorage(); // Load from storage first
             if (index >= 0 && index < readingQuestionBanks.length) {
                 const bankName = readingQuestionBanks[index].name;
-                if (confirm(`確定要刪除題庫「${bankName}」嗎？`)) {
+                const confirmed = await customConfirm(`確定要刪除題庫「${bankName}」嗎？`);
+                if (confirmed) {
                     readingQuestionBanks.splice(index, 1);
                     saveReadingBanksToStorage();
                     updateReadingBankList();
