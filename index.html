@@ -1705,6 +1705,56 @@
             overscroll-behavior: none;
             -webkit-overflow-scrolling: touch;
         }
+
+        /* 浮動貼上按鈕樣式 */
+        #floating-paste-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(109, 40, 217, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        #floating-paste-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(109, 40, 217, 0.5);
+        }
+
+        #floating-paste-btn:active {
+            transform: scale(0.95);
+        }
+
+        #floating-paste-btn .paste-tooltip {
+            position: absolute;
+            right: 70px;
+            background-color: #374151;
+            color: white;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        #floating-paste-btn:hover .paste-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
 
@@ -1804,7 +1854,7 @@
                     <div class="mt-2 text-slate-400 text-sm">
                         Made with <i class="fas fa-heart text-pink-400 mx-1"></i> by <a
                             href="https://kentxchang.blogspot.tw" target="_blank" rel="noopener noreferrer"
-                            class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V5.1</a>
+                            class="text-indigo-500 hover:text-indigo-600 font-bold hover:underline">阿剛老師 V5.3</a>
                     </div>
                     <div class="mt-4 text-slate-500 text-xs max-w-2xl mx-auto px-4">
                         <p class="mb-2">
@@ -2028,6 +2078,12 @@
                 </div>
             </div>
         </div>
+
+        <!-- 浮動貼上圖片按鈕 -->
+        <button id="floating-paste-btn" class="hidden" title="從剪貼簿貼上圖片到背景圖片設定">
+            <i class="fas fa-paste"></i>
+            <span class="paste-tooltip">貼上背景圖片</span>
+        </button>
 
         <div id="teacher-monitor-view" class="hidden w-full max-w-[95%] mx-auto p-4">
             <div
@@ -4017,6 +4073,15 @@ appId: &quot;...&quot;"></textarea>
                     body.classList.add('initial-view-background');
                 }
             }
+            // 浮動貼上按鈕：僅在教師面板可見時顯示
+            const floatingPasteBtn = document.getElementById('floating-paste-btn');
+            if (floatingPasteBtn) {
+                if (viewName === 'teacherMenu') {
+                    floatingPasteBtn.classList.remove('hidden');
+                } else {
+                    floatingPasteBtn.classList.add('hidden');
+                }
+            }
         }
 
         /**
@@ -5782,6 +5847,10 @@ appId: &quot;...&quot;"></textarea>
                 if (!statisticsModal.classList.contains('hidden')) {
                     drawChart(allStudentResponses, currentInteractionMode);
                 }
+                // 若未作答學生名單 modal 已開啟，即時更新列表
+                if (!unsubmittedStudentsModal.classList.contains('hidden')) {
+                    showUnsubmittedStudentsModal();
+                }
             }, (error) => {
                 console.error("[Teacher] Error listening to student submissions:", error);
                 showMessage("無法監聽學生作答，請檢查連線。", "error");
@@ -5887,6 +5956,10 @@ appId: &quot;...&quot;"></textarea>
 
                 if (!statisticsModal.classList.contains('hidden')) {
                     drawChart(allStudentResponses, currentInteractionMode);
+                }
+                // 若未作答學生名單 modal 已開啟，即時更新列表
+                if (!unsubmittedStudentsModal.classList.contains('hidden')) {
+                    showUnsubmittedStudentsModal();
                 }
                 showMessage('統計數據已更新！', 'info');
             } catch (error) {
@@ -9275,6 +9348,26 @@ appId: &quot;...&quot;"></textarea>
                 }
             });
 
+            // NEW: 浮動貼上按鈕事件監聽
+            document.getElementById('floating-paste-btn').addEventListener('click', async () => {
+                try {
+                    const clipboardItems = await navigator.clipboard.read();
+                    for (const item of clipboardItems) {
+                        const imageType = item.types.find(type => type.startsWith('image/'));
+                        if (imageType) {
+                            const blob = await item.getType(imageType);
+                            const file = new File([blob], 'pasted-image.png', { type: imageType });
+                            handleImageFileForTeacher(file, 'teacher-image-status', 'teacher-image-preview-container', 'teacher-image-preview');
+                            return;
+                        }
+                    }
+                    showMessage('剪貼簿中沒有圖片！', 'error');
+                } catch (err) {
+                    console.error('讀取剪貼簿圖片失敗:', err);
+                    showMessage('無法讀取剪貼簿，請確認已允許剪貼簿存取權限。', 'error');
+                }
+            });
+
             // Modal close buttons.
             document.getElementById('student-status-area').addEventListener('click', showStudentListModal);
             studentListModalCloseBtn.addEventListener('click', hideStudentListModal);
@@ -11266,7 +11359,7 @@ ${textResponses.join('\n\n')}`;
                 projectId: "demo",            // 替換為您的 projectId
                 storageBucket: "demo",        // 替換為您的 storageBucket
                 messagingSenderId: "demo",    // 替換為您的 messagingSenderId
-                appId: "demoV5.1"            // 替換為您的 appId
+                appId: "demoV5.3"            // 替換為您的 appId
             };
 
             // 📝 填寫範例（請勿直接複製，這只是格式示例）：
